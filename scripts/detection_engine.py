@@ -20,7 +20,10 @@ CANARY_FILES = {
 RATE_WINDOW_SECONDS = 10
 RATE_THRESHOLD = 10
 
-# Prevent repeated alerts for the same burst
+# Ignore repeated events for the same file inside this period.
+DEBOUNCE_SECONDS = 0.5
+
+# Prevent repeated mass-change alerts during the same burst.
 ALERT_COOLDOWN_SECONDS = 10
 
 
@@ -33,15 +36,17 @@ class RansomwareDetector(FileSystemEventHandler):
     def __init__(self):
         super().__init__()
 
+        # Stores timestamps of normalized file events.
         self.event_times = deque()
 
-        self.canary_alerted = False
-        self.rate_alerted = False
+        # Tracks the most recent event for each file.
+        self.last_file_event = {}
 
+        # Prevents repeated alerts.
         self.last_rate_alert = 0
 
     # --------------------------------------------------------
-    # Utility
+    # Utility functions
     # --------------------------------------------------------
 
     def timestamp(self):
@@ -52,25 +57,17 @@ class RansomwareDetector(FileSystemEventHandler):
         return filename in CANARY_FILES
 
     # --------------------------------------------------------
-    # Event processing
+    # Process filesystem event
     # --------------------------------------------------------
 
     def process_event(self, event_type, path):
+
+        path = str(Path(path))
 
         if Path(path).is_dir():
             return
 
         now = time.time()
-
-        # Add event to rolling window
-        self.event_times.append(now)
-
-        # Remove events older than our window
-        while (
-            self.event_times
-            and now - self.event_times[0] > RATE_WINDOW_SECONDS
-        ):
-            self.event_times.popleft()
 
         # ----------------------------------------------------
         # Canary detection
@@ -87,38 +84,36 @@ class RansomwareDetector(FileSystemEventHandler):
             print(f"File:  {path}")
             print("=" * 65)
 
-            self.canary_alerted = True
+        # ----------------------------------------------------
+        # Debounce duplicate events
+        # ----------------------------------------------------
+
+        previous_event = self.last_file_event.get(path)
+
+        if (
+            previous_event is not None
+            and now - previous_event < DEBOUNCE_SECONDS
+        ):
+            return
+
+        self.last_file_event[path] = now
 
         # ----------------------------------------------------
-        # Mass-change detection
+        # Add normalized event to rolling window
         # ----------------------------------------------------
+
+        self.event_times.append(now)
+
+        while (
+            self.event_times
+            and now - self.event_times[0] > RATE_WINDOW_SECONDS
+        ):
+            self.event_times.popleft()
 
         event_count = len(self.event_times)
 
-        if (
-            event_count >= RATE_THRESHOLD
-            and now - self.last_rate_alert >= ALERT_COOLDOWN_SECONDS
-        ):
-
-            print()
-            print("=" * 65)
-            print("🚨 MASS-CHANGE ALERT")
-            print("=" * 65)
-            print(f"Time:   {self.timestamp()}")
-            print(f"Events: {event_count}")
-            print(
-                f"Window: {RATE_WINDOW_SECONDS} seconds"
-            )
-            print(
-                f"Threshold: {RATE_THRESHOLD} events"
-            )
-            print("=" * 65)
-
-            self.last_rate_alert = now
-            self.rate_alerted = True
-
         # ----------------------------------------------------
-        # Normal event
+        # Display event
         # ----------------------------------------------------
 
         print(
@@ -128,18 +123,53 @@ class RansomwareDetector(FileSystemEventHandler):
             f"WindowEvents={event_count}"
         )
 
+        # ----------------------------------------------------
+        # Mass-change detection
+        # ----------------------------------------------------
+
+        if (
+            event_count >= RATE_THRESHOLD
+            and now - self.last_rate_alert
+            >= ALERT_COOLDOWN_SECONDS
+        ):
+
+            print()
+            print("=" * 65)
+            print("🚨 MASS-CHANGE ALERT")
+            print("=" * 65)
+            print(f"Time:      {self.timestamp()}")
+            print(f"Events:    {event_count}")
+            print(
+                f"Window:    {RATE_WINDOW_SECONDS} seconds"
+            )
+            print(
+                f"Threshold: {RATE_THRESHOLD} events"
+            )
+            print("=" * 65)
+
+            self.last_rate_alert = now
+
     # --------------------------------------------------------
     # Watchdog handlers
     # --------------------------------------------------------
 
     def on_created(self, event):
-        self.process_event("CREATED", event.src_path)
+        self.process_event(
+            "CREATED",
+            event.src_path
+        )
 
     def on_modified(self, event):
-        self.process_event("MODIFIED", event.src_path)
+        self.process_event(
+            "MODIFIED",
+            event.src_path
+        )
 
     def on_deleted(self, event):
-        self.process_event("DELETED", event.src_path)
+        self.process_event(
+            "DELETED",
+            event.src_path
+        )
 
     def on_moved(self, event):
 
@@ -161,24 +191,38 @@ class RansomwareDetector(FileSystemEventHandler):
 def main():
 
     if not MONITORED_DIR.exists():
+
         print(
             f"[ERROR] Directory does not exist: "
             f"{MONITORED_DIR}"
         )
+
         return
 
     print("=" * 65)
     print("        RANSOMWARE 207 - DETECTION ENGINE")
     print("=" * 65)
+
     print(f"Watching: {MONITORED_DIR}")
+
     print(
         f"Rate threshold: "
         f"{RATE_THRESHOLD} events / "
         f"{RATE_WINDOW_SECONDS} seconds"
     )
-    print(f"Canaries: {', '.join(sorted(CANARY_FILES))}")
+
+    print(
+        f"Debounce: {DEBOUNCE_SECONDS} seconds"
+    )
+
+    print(
+        f"Canaries: "
+        f"{', '.join(sorted(CANARY_FILES))}"
+    )
+
     print("Status: WATCHING")
     print("Press CTRL+C to stop.")
+
     print("=" * 65)
 
     detector = RansomwareDetector()
