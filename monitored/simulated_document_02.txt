@@ -1,0 +1,2 @@
+This is a harmless ransomware detection test file.
+Simulated suspicious modification.
