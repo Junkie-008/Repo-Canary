@@ -1,0 +1,2 @@
+Harmless ransomware detection test.
+Simulated modification.
