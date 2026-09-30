@@ -3,6 +3,7 @@ from collections import deque
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from process_attribution import get_process_info
 import time
 
 
@@ -10,11 +11,11 @@ import time
 # CONFIGURATION
 # ============================================================
 
-MONITORED_DIR = Path(r"C:\RansomwareLab\monitored")
-
+MONITORED_DIR = Path(r"C:\RansomwareLab\testdata")
 CANARY_FILES = {
-    "canary_001.txt",
-    "canary_002.txt",
+    "_canary_01.txt",
+    "_canary_02.txt",
+    "_canary_03.txt",
 }
 
 RATE_WINDOW_SECONDS = 10
