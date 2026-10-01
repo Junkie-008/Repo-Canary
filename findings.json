@@ -1,0 +1,252 @@
+[
+  {
+    "time": "2026-09-30 20:08:06",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:06",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:17",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:17",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:25",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:25",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:08:54",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:28",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:29",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:29",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:29",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:29",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-09-30 20:09:50",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-09-30 20:09:57",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:09:57",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:10:01",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:10:01",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:10:05",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:10:05",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:10:09",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:03",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:04",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:04",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-09-30 20:12:04",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-10-01 12:55:52",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:56:07",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  },
+  {
+    "time": "2026-10-01 12:58:18",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:18",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_01.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:18",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:18",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_02.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:19",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:19",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:19",
+    "summary": "Canary file detected: C:\\RansomwareLab\\testdata\\_canary_03.txt",
+    "severity": "Critical"
+  },
+  {
+    "time": "2026-10-01 12:58:19",
+    "summary": "Mass-change detected: 10 events in 10 seconds",
+    "severity": "High"
+  }
+]

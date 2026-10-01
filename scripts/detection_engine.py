@@ -4,6 +4,7 @@ from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from process_attribution import get_process_info
+import json
 import time
 
 
@@ -12,6 +13,8 @@ import time
 # ============================================================
 
 MONITORED_DIR = Path(r"C:\RansomwareLab\testdata")
+FINDINGS_FILE = Path(r"C:\RansomwareLab\findings.json")
+
 CANARY_FILES = {
     "_canary_01.txt",
     "_canary_02.txt",
@@ -26,6 +29,31 @@ DEBOUNCE_SECONDS = 0.5
 
 # Prevent repeated mass-change alerts during the same burst.
 ALERT_COOLDOWN_SECONDS = 10
+
+
+# ============================================================
+# FINDING PERSISTENCE
+# ============================================================
+
+def save_finding(summary, severity="Info"):
+    data = []
+
+    if FINDINGS_FILE.exists():
+        try:
+            with FINDINGS_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+
+        except (json.JSONDecodeError, OSError):
+            data = []
+
+    data.append({
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "summary": summary,
+        "severity": severity
+    })
+
+    with FINDINGS_FILE.open("w", encoding="utf-8") as f:
+        json.dump(data[-50:], f, indent=2)
 
 
 # ============================================================
@@ -84,6 +112,11 @@ class RansomwareDetector(FileSystemEventHandler):
             print(f"Event: {event_type}")
             print(f"File:  {path}")
             print("=" * 65)
+
+            save_finding(
+                f"Canary file detected: {path}",
+                severity="Critical"
+            )
 
         # ----------------------------------------------------
         # Debounce duplicate events
@@ -147,6 +180,13 @@ class RansomwareDetector(FileSystemEventHandler):
                 f"Threshold: {RATE_THRESHOLD} events"
             )
             print("=" * 65)
+
+            save_finding(
+                f"Mass-change detected: "
+                f"{event_count} events in "
+                f"{RATE_WINDOW_SECONDS} seconds",
+                severity="High"
+            )
 
             self.last_rate_alert = now
 
