@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ransomware 207 | Detection Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           HEADER
+        ========================== */
+
+        .header {
+            background: linear-gradient(135deg, #0f3d68, #1f5d91);
+            color: white;
+            padding: 22px 32px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .shield {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+        }
+
+        .brand h1 {
+            font-size: 25px;
+            margin-bottom: 4px;
+        }
+
+        .brand p {
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+        }
+
+        .status-dot.error {
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+        }
+
+        /* =========================
+           MAIN
+        ========================== */
+
+        .container {
+            max-width: 1400px;
+            margin: 28px auto;
+            padding: 0 24px;
+        }
+
+        /* =========================
+           OVERVIEW
+        ========================== */
+
+        .section-title {
+            margin-bottom: 15px;
+        }
+
+        .section-title h2 {
+            font-size: 19px;
+            color: #0f3d68;
+        }
+
+        .section-title p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .card.total::before {
+            background: #2563eb;
+        }
+
+        .card.critical::before {
+            background: #dc2626;
+        }
+
+        .card.high::before {
+            background: #f59e0b;
+        }
+
+        .card.medium::before {
+            background: #eab308;
+        }
+
+        .card-label {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 30px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .card-description {
+            margin-top: 7px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        /* =========================
+           LATEST ALERT
+        ========================== */
+
+        .latest-alert {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+        }
+
+        .latest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .latest-header h2 {
+            font-size: 17px;
+            color: #0f3d68;
+        }
+
+        .latest-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .latest-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 15px;
+            border-radius: 9px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .alert-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+            flex-shrink: 0;
+        }
+
+        .alert-icon.critical {
+            background: #fee2e2;
+        }
+
+        .alert-icon.high {
+            background: #fef3c7;
+        }
+
+        .alert-icon.medium {
+            background: #fef9c3;
+        }
+
+        .alert-icon.info {
+            background: #e2e8f0;
+        }
+
+        .latest-text {
+            flex: 1;
+        }
+
+        .latest-text strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #0f172a;
+        }
+
+        .latest-text span {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* =========================
+           FINDINGS TABLE
+        ========================== */
+
+        .findings-panel {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+
+        .findings-header {
+            padding: 20px 22px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .findings-header h2 {
+            color: #0f3d68;
+            font-size: 17px;
+        }
+
+        .refresh-info {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #0f3d68;
+            color: white;
+        }
+
+        th {
+            padding: 13px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        td {
+            padding: 13px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .time {
+            color: #64748b;
+            white-space: nowrap;
+            font-family: Consolas, monospace;
+        }
+
+        .finding {
+            color: #334155;
+            max-width: 700px;
+            word-break: break-word;
+        }
+
+        /* =========================
+           SEVERITY BADGES
+        ========================== */
+
+        .severity {
+            display: inline-block;
+            min-width: 72px;
+            text-align: center;
+            padding: 5px 9px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .severity-critical {
+            background: #dc2626;
+        }
+
+        .severity-high {
+            background: #f59e0b;
+        }
+
+        .severity-medium {
+            background: #eab308;
+        }
+
+        .severity-info {
+            background: #64748b;
+        }
+
+        /* =========================
+           EMPTY / ERROR STATE
+        ========================== */
+
+        .message {
+            padding: 40px 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .error-message {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin: 15px 20px;
+            font-size: 13px;
+        }
+
+        /* =========================
+           FOOTER
+        ========================== */
+
+        .footer {
+            max-width: 1400px;
+            margin: 22px auto;
+            padding: 0 24px 25px;
+            color: #94a3b8;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+
+        @media (max-width: 900px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 0 12px;
+            }
+
+            .header {
+                padding: 18px;
+            }
+
+            .latest-content {
+                align-items: flex-start;
+            }
+
+            .footer {
+                padding: 0 12px 20px;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="header">
+
+        <div class="header-content">
+
+            <div class="brand">
+
+                <div class="shield">
+                    🛡️
+                </div>
+
+                <div>
+                    <h1>Ransomware 207</h1>
+                    <p>Live Ransomware Detection & Incident Monitoring</p>
+                </div>
+
+            </div>
+
+            <div class="system-status">
+
+                <span id="statusDot" class="status-dot"></span>
+
+                <span id="statusText">
+                    Connecting...
+                </span>
+
+            </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="container">
+
+        <!-- Overview -->
+
+        <div class="section-title">
+
+            <h2>Detection Overview</h2>
+
+            <p>
+                Real-time findings generated by the Ransomware 207 detection engine.
+            </p>
+
+        </div>
+
+
+        <div class="cards">
+
+            <div class="card total">
+
+                <div class="card-label">
+                    Total Findings
+                </div>
+
+                <div id="totalCount" class="card-value">
+                    0
+                </div>
+
+                <div class="card-description">
+                    Recorded detection events
+                </div>
+
+            </div>
+
+
+            <div class="card critical">
+
+                <div class="card-label">
+                    Critical
+                </div>
+
+                <div id="criticalCount" class="card-value">
+                    0
+                </div>
+
+                <div class="card-description">
+                    Canary detections
+                </div>
+
+            </div>
+
+
+            <div class="card high">
+
+                <div class="card-label">
+                    High
+                </div>
+
+                <div id="highCount" class="card-value">
+                    0
+                </div>
+
+                <div class="card-description">
+                    Mass-change alerts
+                </div>
+
+            </div>
+
+
+            <div class="card medium">
+
+                <div class="card-label">
+                    Medium / Info
+                </div>
+
+                <div id="otherCount" class="card-value">
+                    0
+                </div>
+
+                <div class="card-description">
+                    Other recorded findings
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Latest Alert -->
+
+        <section class="latest-alert">
+
+            <div class="latest-header">
+
+                <h2>Latest Detection</h2>
+
+                <span id="latestTime" class="latest-time">
+                    No findings yet
+                </span>
+
+            </div>
+
+
+            <div id="latestContent" class="latest-content">
+
+                <div class="alert-icon info">
+                    ℹ️
+                </div>
+
+                <div class="latest-text">
+
+                    <strong>
+                        Waiting for detection data...
+                    </strong>
+
+                    <span>
+                        The dashboard is monitoring findings.json.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Findings Table -->
+
+        <section class="findings-panel">
+
+            <div class="findings-header">
+
+                <h2>Live Findings</h2>
+
+                <div class="refresh-info">
+                    Auto-refresh: 3 seconds
+                    •
+                    Last update:
+                    <span id="lastUpdate">
+                        --
+                    </span>
+                </div>
+
+            </div>
+
+
+            <div id="tableContainer" class="table-wrapper">
+
+                <div class="message">
+                    Loading findings...
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer class="footer">
+
+        <span>
+            Ransomware 207 • Defensive Cybersecurity Lab
+        </span>
+
+        <span>
+            Monitoring:
+            C:\RansomwareLab\testdata
+        </span>
+
+    </footer>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script>
+
+        const FINDINGS_FILE = "findings.json";
+
+
+        /*
+         * Escape HTML characters.
+         * This prevents finding text from being interpreted as HTML.
+         */
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+
+        /*
+         * Convert severity into a CSS class.
+         */
+
+        function getSeverityClass(severity) {
+
+            const value = String(severity || "Info").toLowerCase();
+
+            if (value === "critical") {
+                return "severity-critical";
+            }
+
+            if (value === "high") {
+                return "severity-high";
+            }
+
+            if (value === "medium") {
+                return "severity-medium";
+            }
+
+            return "severity-info";
+        }
+
+
+        /*
+         * Convert severity into an icon.
+         */
+
+        function getSeverityIcon(severity) {
+
+            const value = String(severity || "Info").toLowerCase();
+
+            if (value === "critical") {
+                return "🚨";
+            }
+
+            if (value === "high") {
+                return "⚠️";
+            }
+
+            if (value === "medium") {
+                return "⚡";
+            }
+
+            return "ℹ️";
+        }
+
+
+        /*
+         * Update connection status.
+         */
+
+        function setConnectionStatus(connected) {
+
+            const dot = document.getElementById("statusDot");
+            const text = document.getElementById("statusText");
+
+            if (connected) {
+
+                dot.classList.remove("error");
+
+                text.textContent = "Connected • Live monitoring";
+
+            } else {
+
+                dot.classList.add("error");
+
+                text.textContent = "Connection error";
+
+            }
+
+        }
+
+
+        /*
+         * Update dashboard statistics.
+         */
+
+        function updateStatistics(rows) {
+
+            const total = rows.length;
+
+            const critical = rows.filter(
+                r => String(r.severity).toLowerCase() === "critical"
+            ).length;
+
+            const high = rows.filter(
+                r => String(r.severity).toLowerCase() === "high"
+            ).length;
+
+            const other = total - critical - high;
+
+
+            document.getElementById("totalCount").textContent = total;
+
+            document.getElementById("criticalCount").textContent = critical;
+
+            document.getElementById("highCount").textContent = high;
+
+            document.getElementById("otherCount").textContent = other;
+
+        }
+
+
+        /*
+         * Update latest detection card.
+         */
+
+        function updateLatest(rows) {
+
+            const latestContent =
+                document.getElementById("latestContent");
+
+            const latestTime =
+                document.getElementById("latestTime");
+
+
+            if (!rows.length) {
+
+                latestTime.textContent = "No findings yet";
+
+                latestContent.innerHTML = `
+                    <div class="alert-icon info">
+                        ℹ️
+                    </div>
+
+                    <div class="latest-text">
+
+                        <strong>
+                            No findings recorded.
+                        </strong>
+
+                        <span>
+                            The detector has not generated an alert yet.
+                        </span>
+
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            const latest = rows[rows.length - 1];
+
+            const severity =
+                String(latest.severity || "Info");
+
+            const severityLower =
+                severity.toLowerCase();
+
+            let iconClass = "info";
+
+            if (severityLower === "critical") {
+                iconClass = "critical";
+            } else if (severityLower === "high") {
+                iconClass = "high";
+            } else if (severityLower === "medium") {
+                iconClass = "medium";
+            }
+
+
+            latestTime.textContent =
+                latest.time || "Unknown time";
+
+
+            latestContent.innerHTML = `
+
+                <div class="alert-icon ${iconClass}">
+                    ${getSeverityIcon(severity)}
+                </div>
+
+                <div class="latest-text">
+
+                    <strong>
+                        ${escapeHtml(latest.summary || "Unknown finding")}
+                    </strong>
+
+                    <span>
+                        Severity:
+                        ${escapeHtml(severity)}
+                    </span>
+
+                </div>
+
+                <span class="severity ${getSeverityClass(severity)}">
+                    ${escapeHtml(severity)}
+                </span>
+
+            `;
+
+        }
+
+
+        /*
+         * Build findings table.
+         */
+
+        function updateTable(rows) {
+
+            const container =
+                document.getElementById("tableContainer");
+
+
+            if (!rows.length) {
+
+                container.innerHTML = `
+
+                    <div class="message">
+
+                        No findings have been recorded yet.
+
+                    </div>
+
+                `;
+
+                return;
+            }
+
+
+            /*
+             * Newest findings appear first.
+             */
+
+            const newestFirst =
+                rows.slice().reverse();
+
+
+            let html = `
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th style="width: 190px;">
+                                Time
+                            </th>
+
+                            <th>
+                                Finding
+                            </th>
+
+                            <th style="width: 120px;">
+                                Severity
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+            `;
+
+
+            newestFirst.forEach(row => {
+
+                const severity =
+                    String(row.severity || "Info");
+
+
+                html += `
+
+                    <tr>
+
+                        <td class="time">
+                            ${escapeHtml(row.time || "--")}
+                        </td>
+
+                        <td class="finding">
+                            ${escapeHtml(row.summary || "Unknown finding")}
+                        </td>
+
+                        <td>
+
+                            <span class="severity ${getSeverityClass(severity)}">
+
+                                ${escapeHtml(severity)}
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            });
+
+
+            html += `
+
+                    </tbody>
+
+                </table>
+
+            `;
+
+
+            container.innerHTML = html;
+
+        }
+
+
+        /*
+         * Load real findings.json.
+         */
+
+        async function loadFindings() {
+
+            try {
+
+                /*
+                 * Cache-busting query parameter.
+                 * This forces the browser to request the newest file.
+                 */
+
+                const response =
+                    await fetch(
+                        FINDINGS_FILE + "?t=" + Date.now()
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "HTTP " + response.status
+                    );
+
+                }
+
+
+                const rows =
+                    await response.json();
+
+
+                if (!Array.isArray(rows)) {
+
+                    throw new Error(
+                        "findings.json does not contain an array"
+                    );
+
+                }
+
+
+                setConnectionStatus(true);
+
+                updateStatistics(rows);
+
+                updateLatest(rows);
+
+                updateTable(rows);
+
+
+                const now =
+                    new Date().toLocaleTimeString();
+
+                document.getElementById("lastUpdate")
+                    .textContent = now;
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Dashboard error:",
+                    error
+                );
+
+
+                setConnectionStatus(false);
+
+
+                document.getElementById("tableContainer")
+                    .innerHTML = `
+
+                        <div class="error-message">
+
+                            Unable to load findings.json.
+
+                            <br><br>
+
+                            Make sure the Python HTTP server is running
+                            from C:\\RansomwareLab.
+
+                            <br><br>
+
+                            Error:
+                            ${escapeHtml(error.message)}
+
+                        </div>
+
+                    `;
+
+            }
+
+        }
+
+
+        /*
+         * Initial load.
+         */
+
+        loadFindings();
+
+
+        /*
+         * Refresh every 3 seconds.
+         */
+
+        setInterval(
+            loadFindings,
+            3000
+        );
+
+    </script>
+
+</body>
+</html>
