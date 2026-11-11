@@ -186,8 +186,9 @@ python scripts/negative_control_test.py
 
 The negative-control script starts the real engine on a throw-away folder,
 performs 3 creates, 1 append, 1 rename and 1 delete, and exits `0` only when
-`findings.json` stayed empty. Use its console output as the evidence for
-SRS §5.4 / FR-1.4 and the Day 4 support pack item M7.
+`findings.json` stayed empty. Use its console output as the evidence for FR-1.4
+and the accuracy requirement (NFR 5.4); both are stated in
+`Project_Documentation/02_SRS_Document.pdf`.
 
 ---
 

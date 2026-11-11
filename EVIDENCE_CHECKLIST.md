@@ -1,8 +1,8 @@
 # Ransomware 207 — End-to-End Evidence Checklist
 
-Use this checklist to produce the evidence for the report, the Day 4 support
-pack (items M3–M7) and the viva demo. Every step lists what to run, what should
-happen, and which requirement it proves.
+Use this checklist to produce the evidence for the project report, the SRS and
+the viva demo. Every step lists what to run, what should happen, and which
+requirement it proves.
 
 Run everything in the isolated Windows lab VM, inside
 `C:\RansomwareLab`, with disposable test data only.
@@ -96,9 +96,8 @@ Alerts:     0
 
 Capture: `evidence\04-negative-control.png`.
 
-Covers: FR-1.4, SRS §5.4 (accuracy), Day 4 item M7. This is the item that
-was previously marked *not yet performed*; keep this screenshot as the
-evidence that normal work does not trigger a false positive.
+Covers: FR-1.4 and the accuracy requirement (NFR 5.4). Keep this screenshot as
+the evidence that normal work does not trigger a false positive.
 
 ### 5. Start the detection engine
 
@@ -232,8 +231,7 @@ you used in the run record below.
 - [ ] Reset the lab data: `python scripts\reset_lab.py --yes --clear-findings`
 - [ ] Restore the `Clean-Before-Ransomware-Test` snapshot.
 - [ ] Fill in the run record below.
-- [ ] Reference the evidence files in the SRS figures, the presentation and
-      the Day 4 support pack.
+- [ ] Reference the evidence files in the report, the SRS and the presentation.
 
 ---
 
