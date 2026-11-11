@@ -1,11 +1,19 @@
-﻿<Sysmon schemaversion="4.90">
+<Sysmon schemaversion="4.90">
   <HashAlgorithms>SHA256</HashAlgorithms>
 
   <EventFiltering>
+    <!-- This lab only needs file creation evidence. -->
     <ProcessCreate onmatch="exclude" />
 
+    <!-- Sysmon combines conditions inside one rule with AND, so each folder
+         needs its own FileCreate rule. Rules are evaluated in order and the
+         first matching rule decides include/exclude. -->
     <FileCreate onmatch="include">
       <TargetFilename condition="begin with">C:\RansomwareLab\monitored\</TargetFilename>
+    </FileCreate>
+
+    <FileCreate onmatch="include">
+      <TargetFilename condition="begin with">C:\RansomwareLab\testdata\</TargetFilename>
     </FileCreate>
   </EventFiltering>
 </Sysmon>

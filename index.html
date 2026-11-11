@@ -20,6 +20,26 @@
             min-height: 100vh;
         }
 
+        code {
+            font-family: Consolas, monospace;
+            font-size: 0.95em;
+            background: rgba(15, 23, 42, 0.06);
+            padding: 1px 4px;
+            border-radius: 4px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         /* =========================
            HEADER
         ========================== */
@@ -75,6 +95,7 @@
             padding: 10px 15px;
             border-radius: 20px;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         .status-dot {
@@ -83,6 +104,7 @@
             border-radius: 50%;
             background: #22c55e;
             box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+            flex-shrink: 0;
         }
 
         .status-dot.error {
@@ -98,6 +120,30 @@
             max-width: 1400px;
             margin: 28px auto;
             padding: 0 24px;
+        }
+
+        /* =========================
+           BANNER
+        ========================== */
+
+        .banner {
+            border-radius: 9px;
+            padding: 13px 16px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+        }
+
+        .banner.error {
+            color: #991b1b;
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .banner.info {
+            color: #1e40af;
+            background: #eff6ff;
+            border-color: #bfdbfe;
         }
 
         /* =========================
@@ -196,7 +242,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .latest-header h2 {
@@ -248,6 +296,7 @@
 
         .latest-text {
             flex: 1;
+            min-width: 0;
         }
 
         .latest-text strong {
@@ -255,6 +304,7 @@
             font-size: 14px;
             margin-bottom: 5px;
             color: #0f172a;
+            word-break: break-word;
         }
 
         .latest-text span {
@@ -263,7 +313,7 @@
         }
 
         /* =========================
-           FINDINGS TABLE
+           FINDINGS PANEL
         ========================== */
 
         .findings-panel {
@@ -279,7 +329,9 @@
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-end;
+            gap: 14px;
+            flex-wrap: wrap;
         }
 
         .findings-header h2 {
@@ -287,9 +339,117 @@
             font-size: 17px;
         }
 
+        .findings-subtitle {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
         .refresh-info {
             font-size: 12px;
             color: #64748b;
+        }
+
+        .toolbar {
+            padding: 14px 22px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            background: #fbfdff;
+        }
+
+        .chips {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #475569;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .chip:hover {
+            border-color: #94a3b8;
+        }
+
+        .chip.is-active {
+            background: #0f3d68;
+            border-color: #0f3d68;
+            color: white;
+        }
+
+        .chip-count {
+            font-size: 11px;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: #334155;
+            border-radius: 10px;
+            padding: 1px 7px;
+        }
+
+        .chip.is-active .chip-count {
+            background: rgba(255, 255, 255, 0.22);
+            color: white;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .search input {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px 11px;
+            font: inherit;
+            font-size: 12px;
+            width: 210px;
+            color: #1e293b;
+            background: white;
+        }
+
+        .search input:focus {
+            outline: 2px solid #1f5d91;
+            outline-offset: 1px;
+        }
+
+        .button {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            border-radius: 8px;
+            padding: 8px 13px;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .button:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .button[aria-pressed="true"] {
+            background: #0f3d68;
+            border-color: #0f3d68;
+            color: white;
         }
 
         .table-wrapper {
@@ -337,6 +497,17 @@
             word-break: break-word;
         }
 
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 22px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #64748b;
+        }
+
         /* =========================
            SEVERITY BADGES
         ========================== */
@@ -369,22 +540,13 @@
         }
 
         /* =========================
-           EMPTY / ERROR STATE
+           EMPTY STATE
         ========================== */
 
         .message {
             padding: 40px 20px;
             text-align: center;
             color: #64748b;
-            font-size: 13px;
-        }
-
-        .error-message {
-            color: #dc2626;
-            background: #fef2f2;
-            padding: 14px 18px;
-            border-radius: 8px;
-            margin: 15px 20px;
             font-size: 13px;
         }
 
@@ -435,6 +597,14 @@
                 align-items: flex-start;
             }
 
+            .toolbar {
+                padding: 12px;
+            }
+
+            .search input {
+                width: 100%;
+            }
+
             .footer {
                 padding: 0 12px 20px;
                 flex-direction: column;
@@ -461,12 +631,12 @@
 
                 <div>
                     <h1>Ransomware 207</h1>
-                    <p>Live Ransomware Detection & Incident Monitoring</p>
+                    <p>Live Ransomware Detection &amp; Incident Monitoring</p>
                 </div>
 
             </div>
 
-            <div class="system-status">
+            <div class="system-status" role="status" aria-live="polite">
 
                 <span id="statusDot" class="status-dot"></span>
 
@@ -486,6 +656,9 @@
     ========================== -->
 
     <main class="container">
+
+        <div id="alertBanner" class="banner" role="alert" hidden></div>
+
 
         <!-- Overview -->
 
@@ -587,7 +760,7 @@
             </div>
 
 
-            <div id="latestContent" class="latest-content">
+            <div id="latestContent" class="latest-content" aria-live="polite">
 
                 <div class="alert-icon info">
                     ℹ️
@@ -616,10 +789,18 @@
 
             <div class="findings-header">
 
-                <h2>Live Findings</h2>
+                <div>
+
+                    <h2>Live Findings</h2>
+
+                    <p class="findings-subtitle">
+                        Every alert raised by the detection engine.
+                    </p>
+
+                </div>
 
                 <div class="refresh-info">
-                    Auto-refresh: 3 seconds
+                    <span id="refreshMode">Auto-refresh: 3 s</span>
                     •
                     Last update:
                     <span id="lastUpdate">
@@ -630,11 +811,83 @@
             </div>
 
 
+            <div class="toolbar">
+
+                <div class="chips" role="group" aria-label="Filter findings by severity">
+
+                    <button type="button" class="chip is-active" data-filter="all">
+                        All <span class="chip-count" id="countAll">0</span>
+                    </button>
+
+                    <button type="button" class="chip" data-filter="critical">
+                        Critical <span class="chip-count" id="countCritical">0</span>
+                    </button>
+
+                    <button type="button" class="chip" data-filter="high">
+                        High <span class="chip-count" id="countHigh">0</span>
+                    </button>
+
+                    <button type="button" class="chip" data-filter="medium">
+                        Medium <span class="chip-count" id="countMedium">0</span>
+                    </button>
+
+                    <button type="button" class="chip" data-filter="info">
+                        Info <span class="chip-count" id="countInfo">0</span>
+                    </button>
+
+                </div>
+
+
+                <div class="toolbar-actions">
+
+                    <label class="search">
+
+                        <span class="sr-only">Search findings</span>
+
+                        <input
+                            id="searchInput"
+                            type="search"
+                            placeholder="Search findings…"
+                            autocomplete="off"
+                        >
+
+                    </label>
+
+                    <button type="button" id="pauseButton" class="button" aria-pressed="false">
+                        Pause
+                    </button>
+
+                    <button type="button" id="refreshButton" class="button">
+                        Refresh
+                    </button>
+
+                    <button type="button" id="exportButton" class="button">
+                        Export CSV
+                    </button>
+
+                </div>
+
+            </div>
+
+
             <div id="tableContainer" class="table-wrapper">
 
                 <div class="message">
                     Loading findings...
                 </div>
+
+            </div>
+
+
+            <div class="table-footer">
+
+                <span id="showingCount">
+                    0 of 0 findings
+                </span>
+
+                <span>
+                    Source: <code>findings.json</code>
+                </span>
 
             </div>
 
@@ -654,11 +907,18 @@
         </span>
 
         <span>
-            Monitoring:
-            C:\RansomwareLab\testdata
+            Watching: <code>testdata</code>
+            • Source: <code>findings.json</code>
         </span>
 
     </footer>
+
+
+    <noscript>
+        <div class="message">
+            The dashboard needs JavaScript enabled to load findings.json.
+        </div>
+    </noscript>
 
 
     <!-- =========================
@@ -668,6 +928,17 @@
     <script>
 
         const FINDINGS_FILE = "findings.json";
+        const REFRESH_MS = 3000;
+
+        let allRows = [];
+        let activeFilter = "all";
+        let searchTerm = "";
+        let paused = false;
+        let hasLoadedOnce = false;
+
+        let lastTableHtml = "";
+        let lastLatestHtml = "";
+        let bannerTimer = null;
 
 
         /*
@@ -677,7 +948,7 @@
 
         function escapeHtml(value) {
 
-            return String(value)
+            return String(value === undefined || value === null ? "" : value)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -687,46 +958,39 @@
 
 
         /*
-         * Convert severity into a CSS class.
+         * Normalise a severity into one of four dashboard buckets.
          */
 
-        function getSeverityClass(severity) {
+        function severityKey(severity) {
 
             const value = String(severity || "Info").toLowerCase();
 
-            if (value === "critical") {
-                return "severity-critical";
+            if (value === "critical" || value === "high" || value === "medium") {
+                return value;
             }
 
-            if (value === "high") {
-                return "severity-high";
-            }
-
-            if (value === "medium") {
-                return "severity-medium";
-            }
-
-            return "severity-info";
+            return "info";
         }
 
 
-        /*
-         * Convert severity into an icon.
-         */
+        function getSeverityClass(severity) {
+            return "severity-" + severityKey(severity);
+        }
+
 
         function getSeverityIcon(severity) {
 
-            const value = String(severity || "Info").toLowerCase();
+            const key = severityKey(severity);
 
-            if (value === "critical") {
+            if (key === "critical") {
                 return "🚨";
             }
 
-            if (value === "high") {
+            if (key === "high") {
                 return "⚠️";
             }
 
-            if (value === "medium") {
+            if (key === "medium") {
                 return "⚡";
             }
 
@@ -735,79 +999,112 @@
 
 
         /*
-         * Update connection status.
+         * Connection status + banner.
          */
 
-        function setConnectionStatus(connected) {
+        function setConnectionStatus(connected, text) {
 
             const dot = document.getElementById("statusDot");
-            const text = document.getElementById("statusText");
+            const label = document.getElementById("statusText");
 
-            if (connected) {
+            dot.classList.toggle("error", !connected);
+            label.textContent = text;
+        }
 
-                dot.classList.remove("error");
 
-                text.textContent = "Connected • Live monitoring";
+        function showBanner(message, tone) {
 
-            } else {
+            const banner = document.getElementById("alertBanner");
 
-                dot.classList.add("error");
+            banner.textContent = message;
+            banner.className = "banner " + (tone || "error");
+            banner.hidden = false;
 
-                text.textContent = "Connection error";
+            clearTimeout(bannerTimer);
 
+            if (tone === "info") {
+                bannerTimer = setTimeout(hideBanner, 4000);
+            }
+        }
+
+
+        function hideBanner() {
+
+            const banner = document.getElementById("alertBanner");
+
+            clearTimeout(bannerTimer);
+            banner.hidden = true;
+        }
+
+
+        /*
+         * Filtering.
+         */
+
+        function matchesFilters(row) {
+
+            if (activeFilter !== "all" && severityKey(row.severity) !== activeFilter) {
+                return false;
             }
 
+            if (!searchTerm) {
+                return true;
+            }
+
+            return [
+                row.summary,
+                row.time,
+                row.severity,
+            ].some(value => String(value || "").toLowerCase().includes(searchTerm));
+        }
+
+
+        function summarize(rows) {
+
+            const counts = {
+                all: rows.length,
+                critical: 0,
+                high: 0,
+                medium: 0,
+                info: 0,
+            };
+
+            rows.forEach(row => {
+                counts[severityKey(row.severity)] += 1;
+            });
+
+            return counts;
         }
 
 
         /*
-         * Update dashboard statistics.
+         * Statistics + filter chip counts.
          */
 
-        function updateStatistics(rows) {
+        function updateStatistics(counts) {
 
-            const total = rows.length;
+            document.getElementById("totalCount").textContent = counts.all;
+            document.getElementById("criticalCount").textContent = counts.critical;
+            document.getElementById("highCount").textContent = counts.high;
+            document.getElementById("otherCount").textContent =
+                counts.medium + counts.info;
 
-            const critical = rows.filter(
-                r => String(r.severity).toLowerCase() === "critical"
-            ).length;
-
-            const high = rows.filter(
-                r => String(r.severity).toLowerCase() === "high"
-            ).length;
-
-            const other = total - critical - high;
-
-
-            document.getElementById("totalCount").textContent = total;
-
-            document.getElementById("criticalCount").textContent = critical;
-
-            document.getElementById("highCount").textContent = high;
-
-            document.getElementById("otherCount").textContent = other;
-
+            document.getElementById("countAll").textContent = counts.all;
+            document.getElementById("countCritical").textContent = counts.critical;
+            document.getElementById("countHigh").textContent = counts.high;
+            document.getElementById("countMedium").textContent = counts.medium;
+            document.getElementById("countInfo").textContent = counts.info;
         }
 
 
         /*
-         * Update latest detection card.
+         * Latest detection card.
          */
 
-        function updateLatest(rows) {
+        function buildLatestHtml(latest) {
 
-            const latestContent =
-                document.getElementById("latestContent");
-
-            const latestTime =
-                document.getElementById("latestTime");
-
-
-            if (!rows.length) {
-
-                latestTime.textContent = "No findings yet";
-
-                latestContent.innerHTML = `
+            if (!latest) {
+                return `
                     <div class="alert-icon info">
                         ℹ️
                     </div>
@@ -824,37 +1121,12 @@
 
                     </div>
                 `;
-
-                return;
             }
 
+            const severity = String(latest.severity || "Info");
 
-            const latest = rows[rows.length - 1];
-
-            const severity =
-                String(latest.severity || "Info");
-
-            const severityLower =
-                severity.toLowerCase();
-
-            let iconClass = "info";
-
-            if (severityLower === "critical") {
-                iconClass = "critical";
-            } else if (severityLower === "high") {
-                iconClass = "high";
-            } else if (severityLower === "medium") {
-                iconClass = "medium";
-            }
-
-
-            latestTime.textContent =
-                latest.time || "Unknown time";
-
-
-            latestContent.innerHTML = `
-
-                <div class="alert-icon ${iconClass}">
+            return `
+                <div class="alert-icon ${severityKey(severity)}">
                     ${getSeverityIcon(severity)}
                 </div>
 
@@ -865,8 +1137,7 @@
                     </strong>
 
                     <span>
-                        Severity:
-                        ${escapeHtml(severity)}
+                        Severity: ${escapeHtml(severity)}
                     </span>
 
                 </div>
@@ -874,63 +1145,77 @@
                 <span class="severity ${getSeverityClass(severity)}">
                     ${escapeHtml(severity)}
                 </span>
-
             `;
+        }
 
+
+        function updateLatest(rows) {
+
+            const content = document.getElementById("latestContent");
+            const time = document.getElementById("latestTime");
+
+            const latest = rows.length ? rows[rows.length - 1] : null;
+
+            time.textContent = latest
+                ? (latest.time || "Unknown time")
+                : "No findings yet";
+
+            const html = buildLatestHtml(latest);
+
+            /*
+             * Only rewrite the live region when the alert actually changes,
+             * otherwise every 3-second poll would re-announce it.
+             */
+
+            if (html === lastLatestHtml) {
+                return;
+            }
+
+            lastLatestHtml = html;
+            content.innerHTML = html;
         }
 
 
         /*
-         * Build findings table.
+         * Findings table.
          */
 
-        function updateTable(rows) {
+        function buildTableHtml(rows) {
 
-            const container =
-                document.getElementById("tableContainer");
-
-
-            if (!rows.length) {
-
-                container.innerHTML = `
-
+            if (!allRows.length) {
+                return `
                     <div class="message">
-
                         No findings have been recorded yet.
-
                     </div>
-
                 `;
-
-                return;
             }
 
+            if (!rows.length) {
+                return `
+                    <div class="message">
+                        No findings match the current filter or search.
+                    </div>
+                `;
+            }
 
-            /*
-             * Newest findings appear first.
-             */
-
-            const newestFirst =
-                rows.slice().reverse();
-
+            const newestFirst = rows.slice().reverse();
 
             let html = `
-
                 <table>
 
                     <thead>
 
                         <tr>
 
-                            <th style="width: 190px;">
+                            <th scope="col" style="width: 190px;">
                                 Time
                             </th>
 
-                            <th>
+                            <th scope="col">
                                 Finding
                             </th>
 
-                            <th style="width: 120px;">
+                            <th scope="col" style="width: 120px;">
                                 Severity
                             </th>
 
@@ -939,18 +1224,13 @@
                     </thead>
 
                     <tbody>
-
             `;
-
 
             newestFirst.forEach(row => {
 
-                const severity =
-                    String(row.severity || "Info");
-
+                const severity = String(row.severity || "Info");
 
                 html += `
-
                     <tr>
 
                         <td class="time">
@@ -964,36 +1244,110 @@
                         <td>
 
                             <span class="severity ${getSeverityClass(severity)}">
-
                                 ${escapeHtml(severity)}
-
                             </span>
 
                         </td>
 
                     </tr>
-
                 `;
-
             });
 
-
             html += `
-
                     </tbody>
 
                 </table>
-
             `;
 
+            return html;
+        }
 
+
+        function updateTable(rows) {
+
+            const container = document.getElementById("tableContainer");
+            const html = buildTableHtml(rows);
+
+            /*
+             * Re-rendering identical HTML every poll causes flicker and
+             * loses text selection, so only touch the DOM when it changes.
+             */
+
+            if (html === lastTableHtml) {
+                return;
+            }
+
+            lastTableHtml = html;
             container.innerHTML = html;
+        }
 
+
+        function renderAll() {
+
+            const counts = summarize(allRows);
+            const filtered = allRows.filter(matchesFilters);
+
+            updateStatistics(counts);
+            updateLatest(allRows);
+            updateTable(filtered);
+
+            document.getElementById("showingCount").textContent =
+                filtered.length + " of " + allRows.length +
+                (allRows.length === 1 ? " finding" : " findings");
         }
 
 
         /*
-         * Load real findings.json.
+         * CSV export of the current view.
+         */
+
+        function csvEscape(value) {
+
+            return '"' + String(value === undefined || value === null ? "" : value)
+                .replace(/"/g, '""') + '"';
+        }
+
+
+        function exportCsv() {
+
+            const rows = allRows.filter(matchesFilters);
+
+            if (!rows.length) {
+                showBanner("There are no findings to export with the current filter.", "info");
+                return;
+            }
+
+            const lines = ["Time,Finding,Severity"];
+
+            rows.forEach(row => {
+                lines.push(
+                    [row.time, row.summary, row.severity]
+                        .map(csvEscape)
+                        .join(",")
+                );
+            });
+
+            const blob = new Blob(
+                ["\ufeff" + lines.join("\r\n")],
+                { type: "text/csv;charset=utf-8" }
+            );
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "ransomware-207-findings.csv";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+
+        /*
+         * Load findings.json.
          */
 
         async function loadFindings() {
@@ -1005,103 +1359,146 @@
                  * This forces the browser to request the newest file.
                  */
 
-                const response =
-                    await fetch(
-                        FINDINGS_FILE + "?t=" + Date.now()
-                    );
-
+                const response = await fetch(
+                    FINDINGS_FILE + "?t=" + Date.now(),
+                    { cache: "no-store" }
+                );
 
                 if (!response.ok) {
-
-                    throw new Error(
-                        "HTTP " + response.status
-                    );
-
+                    throw new Error("HTTP " + response.status);
                 }
 
-
-                const rows =
-                    await response.json();
-
+                const rows = await response.json();
 
                 if (!Array.isArray(rows)) {
-
-                    throw new Error(
-                        "findings.json does not contain an array"
-                    );
-
+                    throw new Error("findings.json does not contain an array");
                 }
 
+                allRows = rows;
+                hasLoadedOnce = true;
 
-                setConnectionStatus(true);
+                hideBanner();
 
-                updateStatistics(rows);
+                setConnectionStatus(
+                    true,
+                    paused
+                        ? "Paused • showing last data"
+                        : "Connected • live monitoring"
+                );
 
-                updateLatest(rows);
+                renderAll();
 
-                updateTable(rows);
-
-
-                const now =
+                document.getElementById("lastUpdate").textContent =
                     new Date().toLocaleTimeString();
-
-                document.getElementById("lastUpdate")
-                    .textContent = now;
 
             }
 
             catch (error) {
 
-                console.error(
-                    "Dashboard error:",
-                    error
+                console.error("Dashboard error:", error);
+
+                setConnectionStatus(false, "Connection error");
+
+                showBanner(
+                    "Unable to load findings.json (" + error.message + "). " +
+                    "Start scripts/dashboard_server.py, or serve this page " +
+                    "next to findings.json.",
+                    "error"
                 );
 
+                /*
+                 * Keep the last good table on screen. Only show a placeholder
+                 * when the dashboard has never received data.
+                 */
 
-                setConnectionStatus(false);
+                if (!hasLoadedOnce) {
 
+                    lastTableHtml = "";
 
-                document.getElementById("tableContainer")
-                    .innerHTML = `
-
-                        <div class="error-message">
-
-                            Unable to load findings.json.
-
-                            <br><br>
-
-                            Make sure the Python HTTP server is running
-                            from C:\\RansomwareLab.
-
-                            <br><br>
-
-                            Error:
-                            ${escapeHtml(error.message)}
-
+                    document.getElementById("tableContainer").innerHTML = `
+                        <div class="message">
+                            No data yet. Waiting for findings.json.
                         </div>
-
                     `;
+                }
 
             }
-
         }
 
 
         /*
-         * Initial load.
+         * Controls.
+         */
+
+        document.querySelectorAll(".chip").forEach(chip => {
+
+            chip.addEventListener("click", () => {
+
+                activeFilter = chip.dataset.filter;
+
+                document.querySelectorAll(".chip").forEach(other => {
+                    other.classList.toggle("is-active", other === chip);
+                });
+
+                renderAll();
+            });
+        });
+
+
+        document.getElementById("searchInput").addEventListener("input", event => {
+
+            searchTerm = event.target.value.trim().toLowerCase();
+
+            renderAll();
+        });
+
+
+        document.getElementById("pauseButton").addEventListener("click", event => {
+
+            paused = !paused;
+
+            event.target.textContent = paused ? "Resume" : "Pause";
+            event.target.setAttribute("aria-pressed", String(paused));
+
+            document.getElementById("refreshMode").textContent =
+                paused ? "Auto-refresh paused" : "Auto-refresh: 3 s";
+
+            setConnectionStatus(
+                true,
+                paused
+                    ? "Paused • showing last data"
+                    : "Connected • live monitoring"
+            );
+
+            if (!paused) {
+                loadFindings();
+            }
+        });
+
+
+        document.getElementById("refreshButton").addEventListener("click", () => {
+            loadFindings();
+        });
+
+
+        document.getElementById("exportButton").addEventListener("click", () => {
+            exportCsv();
+        });
+
+
+        /*
+         * Initial load + 3-second polling.
          */
 
         loadFindings();
 
+        setInterval(() => {
 
-        /*
-         * Refresh every 3 seconds.
-         */
+            if (!paused) {
+                loadFindings();
+            }
 
-        setInterval(
-            loadFindings,
-            3000
-        );
+        }, REFRESH_MS);
 
     </script>
 

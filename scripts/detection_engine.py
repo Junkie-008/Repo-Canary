@@ -1,59 +1,61 @@
-from pathlib import Path
-from collections import deque
+"""Ransomware 207 - detection engine.
+
+Watches the lab test folder with watchdog, applies the canary and
+mass-change rules (detection_rules.py) and appends every alert to
+findings.json (findings_store.py).
+
+Usage
+-----
+    py -3.12 detection_engine.py
+    py -3.12 detection_engine.py --test-dir <folder> --findings <file>
+
+The default folder is C:\\RansomwareLab\\testdata. Override it with the
+arguments above or with the environment variables documented in
+lab_config.py.
+"""
+
+import argparse
 from datetime import datetime
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from process_attribution import get_process_info
-import json
+from pathlib import Path
+import sys
 import time
 
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
-MONITORED_DIR = Path(r"C:\RansomwareLab\testdata")
-FINDINGS_FILE = Path(r"C:\RansomwareLab\findings.json")
-
-CANARY_FILES = {
-    "_canary_01.txt",
-    "_canary_02.txt",
-    "_canary_03.txt",
-}
-
-RATE_WINDOW_SECONDS = 10
-RATE_THRESHOLD = 10
-
-# Ignore repeated events for the same file inside this period.
-DEBOUNCE_SECONDS = 0.5
-
-# Prevent repeated mass-change alerts during the same burst.
-ALERT_COOLDOWN_SECONDS = 10
+import lab_config
+from detection_rules import (
+    CANARY_FILES,
+    DEBOUNCE_SECONDS,
+    RATE_THRESHOLD,
+    RATE_WINDOW_SECONDS,
+    Alert,
+    DetectionRules,
+)
+from findings_store import save_finding
 
 
-# ============================================================
-# FINDING PERSISTENCE
-# ============================================================
+def timestamp() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def save_finding(summary, severity="Info"):
-    data = []
 
-    if FINDINGS_FILE.exists():
+def configure_output() -> None:
+    """Make alert output safe when stdout is redirected or not UTF-8.
+
+    The alert banners use emoji. A redirected Windows stream defaults to
+    cp1252, which cannot encode them, and a print() failure inside the
+    watchdog thread would stop the detector. Degrade instead of crashing.
+    """
+
+    for stream in (sys.stdout, sys.stderr):
         try:
-            with FINDINGS_FILE.open("r", encoding="utf-8") as f:
-                data = json.load(f)
-
-        except (json.JSONDecodeError, OSError):
-            data = []
-
-    data.append({
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "summary": summary,
-        "severity": severity
-    })
-
-    with FINDINGS_FILE.open("w", encoding="utf-8") as f:
-        json.dump(data[-50:], f, indent=2)
+            stream.reconfigure(
+                encoding="utf-8",
+                errors="replace",
+                line_buffering=True,
+            )
+        except (AttributeError, ValueError, OSError):
+            pass
 
 
 # ============================================================
@@ -62,229 +64,164 @@ def save_finding(summary, severity="Info"):
 
 class RansomwareDetector(FileSystemEventHandler):
 
-    def __init__(self):
+    def __init__(self, findings_file):
         super().__init__()
-
-        # Stores timestamps of normalized file events.
-        self.event_times = deque()
-
-        # Tracks the most recent event for each file.
-        self.last_file_event = {}
-
-        # Prevents repeated alerts.
-        self.last_rate_alert = 0
+        self.rules = DetectionRules()
+        self.findings_file = Path(findings_file)
 
     # --------------------------------------------------------
-    # Utility functions
+    # Alerts
     # --------------------------------------------------------
 
-    def timestamp(self):
-        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def print_alert(self, alert: Alert) -> None:
+        print()
+        print("=" * 65)
 
-    def is_canary(self, path):
-        filename = Path(path).name.lower()
-        return filename in CANARY_FILES
+        if alert.severity == "Critical":
+            print("🚨 CANARY ALERT")
+        else:
+            print("🚨 MASS-CHANGE ALERT")
+
+        print("=" * 65)
+        print(f"Time:  {alert.time}")
+        print(f"Event: {alert.event_type}")
+        print(f"File:  {alert.path}")
+
+        if alert.severity != "Critical":
+            print(f"Window:    {RATE_WINDOW_SECONDS} seconds")
+            print(f"Threshold: {RATE_THRESHOLD} events")
+
+        print("=" * 65)
+
+    def raise_alert(self, alert: Alert) -> None:
+        self.print_alert(alert)
+
+        save_finding(
+            alert.summary,
+            alert.severity,
+            findings_file=self.findings_file,
+            timestamp=alert.time,
+        )
 
     # --------------------------------------------------------
-    # Process filesystem event
+    # Event entry point
     # --------------------------------------------------------
 
-    def process_event(self, event_type, path):
+    def process_event(self, event_type, path, is_directory=False):
+
+        if is_directory:
+            return
 
         path = str(Path(path))
 
-        if Path(path).is_dir():
-            return
-
-        now = time.time()
-
-        # ----------------------------------------------------
-        # Canary detection
-        # ----------------------------------------------------
-
-        if self.is_canary(path):
-
-            print()
-            print("=" * 65)
-            print("🚨 CANARY ALERT")
-            print("=" * 65)
-            print(f"Time:  {self.timestamp()}")
-            print(f"Event: {event_type}")
-            print(f"File:  {path}")
-            print("=" * 65)
-
-            save_finding(
-                f"Canary file detected: {path}",
-                severity="Critical"
-            )
-
-        # ----------------------------------------------------
-        # Debounce duplicate events
-        # ----------------------------------------------------
-
-        previous_event = self.last_file_event.get(path)
-
-        if (
-            previous_event is not None
-            and now - previous_event < DEBOUNCE_SECONDS
-        ):
-            return
-
-        self.last_file_event[path] = now
-
-        # ----------------------------------------------------
-        # Add normalized event to rolling window
-        # ----------------------------------------------------
-
-        self.event_times.append(now)
-
-        while (
-            self.event_times
-            and now - self.event_times[0] > RATE_WINDOW_SECONDS
-        ):
-            self.event_times.popleft()
-
-        event_count = len(self.event_times)
-
-        # ----------------------------------------------------
-        # Display event
-        # ----------------------------------------------------
-
-        print(
-            f"[{self.timestamp()}] "
-            f"{event_type:<8} "
-            f"{Path(path).name:<35} "
-            f"WindowEvents={event_count}"
+        result = self.rules.process_event(
+            event_type,
+            path,
+            is_directory=False,
         )
 
-        # ----------------------------------------------------
-        # Mass-change detection
-        # ----------------------------------------------------
+        # Duplicate event for the same file within the debounce period.
+        if not result.accepted:
+            return
 
-        if (
-            event_count >= RATE_THRESHOLD
-            and now - self.last_rate_alert
-            >= ALERT_COOLDOWN_SECONDS
-        ):
+        print(
+            f"[{timestamp()}] "
+            f"{event_type:<8} "
+            f"{Path(path).name:<35} "
+            f"WindowEvents={result.event_count}"
+        )
 
-            print()
-            print("=" * 65)
-            print("🚨 MASS-CHANGE ALERT")
-            print("=" * 65)
-            print(f"Time:      {self.timestamp()}")
-            print(f"Events:    {event_count}")
-            print(
-                f"Window:    {RATE_WINDOW_SECONDS} seconds"
-            )
-            print(
-                f"Threshold: {RATE_THRESHOLD} events"
-            )
-            print("=" * 65)
-
-            save_finding(
-                f"Mass-change detected: "
-                f"{event_count} events in "
-                f"{RATE_WINDOW_SECONDS} seconds",
-                severity="High"
-            )
-
-            self.last_rate_alert = now
+        for alert in result.alerts:
+            self.raise_alert(alert)
 
     # --------------------------------------------------------
     # Watchdog handlers
     # --------------------------------------------------------
 
     def on_created(self, event):
-        self.process_event(
-            "CREATED",
-            event.src_path
-        )
+        self.process_event("CREATED", event.src_path, event.is_directory)
 
     def on_modified(self, event):
-        self.process_event(
-            "MODIFIED",
-            event.src_path
-        )
+        self.process_event("MODIFIED", event.src_path, event.is_directory)
 
     def on_deleted(self, event):
-        self.process_event(
-            "DELETED",
-            event.src_path
-        )
+        self.process_event("DELETED", event.src_path, event.is_directory)
 
     def on_moved(self, event):
-
-        self.process_event(
-            "MOVED",
-            event.src_path
-        )
-
-        self.process_event(
-            "MOVED_TO",
-            event.dest_path
-        )
+        self.process_event("MOVED", event.src_path, event.is_directory)
+        self.process_event("MOVED_TO", event.dest_path, event.is_directory)
 
 
 # ============================================================
 # MAIN
 # ============================================================
 
-def main():
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Ransomware 207 detection engine",
+    )
 
-    if not MONITORED_DIR.exists():
+    parser.add_argument(
+        "--test-dir",
+        default=str(lab_config.TEST_DIR),
+        help=f"folder to watch (default: {lab_config.TEST_DIR})",
+    )
 
-        print(
-            f"[ERROR] Directory does not exist: "
-            f"{MONITORED_DIR}"
-        )
+    parser.add_argument(
+        "--findings",
+        default=str(lab_config.FINDINGS_FILE),
+        help=f"findings JSON file (default: {lab_config.FINDINGS_FILE})",
+    )
 
-        return
+    return parser.parse_args(argv)
+
+
+def main(argv=None) -> int:
+
+    configure_output()
+
+    args = parse_args(argv)
+
+    monitored_dir = Path(args.test_dir)
+    findings_file = Path(args.findings)
+
+    if not monitored_dir.exists():
+        print(f"[ERROR] Directory does not exist: {monitored_dir}")
+        return 1
 
     print("=" * 65)
     print("        RANSOMWARE 207 - DETECTION ENGINE")
     print("=" * 65)
-
-    print(f"Watching: {MONITORED_DIR}")
-
+    print(f"Watching: {monitored_dir}")
+    print(f"Findings: {findings_file}")
     print(
         f"Rate threshold: "
         f"{RATE_THRESHOLD} events / "
         f"{RATE_WINDOW_SECONDS} seconds"
     )
-
-    print(
-        f"Debounce: {DEBOUNCE_SECONDS} seconds"
-    )
-
-    print(
-        f"Canaries: "
-        f"{', '.join(sorted(CANARY_FILES))}"
-    )
-
-    print("Status: WATCHING")
+    print(f"Debounce: {DEBOUNCE_SECONDS} seconds")
+    print(f"Canaries: {', '.join(sorted(CANARY_FILES))}")
     print("Press CTRL+C to stop.")
-
     print("=" * 65)
 
-    detector = RansomwareDetector()
+    detector = RansomwareDetector(findings_file)
 
     observer = Observer()
-
     observer.schedule(
         detector,
-        str(MONITORED_DIR),
-        recursive=True
+        str(monitored_dir),
+        recursive=True,
     )
 
     observer.start()
 
-    try:
+    print("Status: WATCHING", flush=True)
 
+    try:
         while True:
             time.sleep(1)
 
     except KeyboardInterrupt:
-
         print("\n[+] Stopping detector...")
 
         observer.stop()
@@ -293,6 +230,8 @@ def main():
 
     print("[+] Detector stopped.")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

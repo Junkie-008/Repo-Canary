@@ -5,7 +5,9 @@ from datetime import datetime
 import time
 
 
-MONITORED_DIR = Path(r"C:\RansomwareLab\monitored")
+import lab_config
+
+MONITORED_DIR = Path(lab_config.MONITORED_DIR)
 
 
 class RansomwareMonitor(FileSystemEventHandler):

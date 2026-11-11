@@ -1,7 +1,9 @@
 from pathlib import Path
 import time
 
-MONITORED_DIR = Path(r"C:\RansomwareLab\monitored")
+import lab_config
+
+MONITORED_DIR = Path(lab_config.MONITORED_DIR)
 
 TEST_FILES = [
     "simulated_document_01.txt",

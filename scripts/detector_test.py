@@ -1,7 +1,9 @@
 from pathlib import Path
 import time
 
-MONITORED_DIR = Path(r"C:\RansomwareLab\monitored")
+import lab_config
+
+MONITORED_DIR = Path(lab_config.TEST_DIR)
 
 TEST_FILES = [
     "burst_test_01.txt",
@@ -21,7 +23,7 @@ def main():
     # Phase 1: Touch the canary
     # --------------------------------------------------------
 
-    canary = MONITORED_DIR / "CANARY_001.txt"
+    canary = MONITORED_DIR / "_canary_01.txt"
 
     print("[+] Triggering canary...")
     

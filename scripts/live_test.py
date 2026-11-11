@@ -1,7 +1,9 @@
 from pathlib import Path
 import time
 
-folder = Path(r"C:\RansomwareLab\monitored")
+import lab_config
+
+folder = Path(lab_config.MONITORED_DIR)
 test_file = folder / "psutil_correlation_test.txt"
 
 print(f"PID: {__import__('os').getpid()}")
