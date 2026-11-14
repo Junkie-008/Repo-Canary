@@ -22,7 +22,7 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -51,6 +51,8 @@ class Alert:
     summary: str
     event_type: str
     path: str
+    rule: str = "canary"
+    occurred_epoch: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -68,7 +70,11 @@ class EventResult:
 
 
 def _format_time(epoch: float) -> str:
-    return datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S")
+    """UTC ISO-8601, which sorts lexicographically and works across hosts."""
+
+    return datetime.fromtimestamp(epoch, tz=timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%S.%fZ"
+    )
 
 
 class DetectionRules:
@@ -117,6 +123,19 @@ class DetectionRules:
         ):
             self.event_times.popleft()
 
+    def _prune_debounce(self, now: float) -> None:
+        """Keep the per-path debounce map bounded in a long-running daemon."""
+
+        if len(self.last_file_event) <= 8192:
+            return
+
+        cutoff = now - max(self.debounce_seconds, 60.0)
+        self.last_file_event = {
+            path: seen
+            for path, seen in self.last_file_event.items()
+            if seen >= cutoff
+        }
+
     # ------------------------------------------------------------
     # Event processing
     # ------------------------------------------------------------
@@ -127,6 +146,7 @@ class DetectionRules:
         path,
         now: Optional[float] = None,
         is_directory: Optional[bool] = None,
+        count_event: bool = True,
     ) -> EventResult:
         """Evaluate one filesystem event and return the alerts it raises.
 
@@ -156,8 +176,15 @@ class DetectionRules:
             return EventResult(accepted=False, event_count=self.event_count, alerts=())
 
         self.last_file_event[path] = now
-        self.event_times.append(now)
-        self._prune(now)
+
+        # A rename calls this twice (source and destination); only the source
+        # may add to the rolling window, otherwise one rename counts as two
+        # mass-change events.
+        if count_event:
+            self.event_times.append(now)
+            self._prune(now)
+
+        self._prune_debounce(now)
 
         alerts = []
 
@@ -173,6 +200,8 @@ class DetectionRules:
                     summary=f"Canary file detected: {path}",
                     event_type=event_type,
                     path=path,
+                    rule="canary",
+                    occurred_epoch=now,
                 )
             )
 
@@ -185,7 +214,11 @@ class DetectionRules:
             or now - self.last_rate_alert >= self.alert_cooldown_seconds
         )
 
-        if self.event_count >= self.rate_threshold and cooldown_passed:
+        if (
+            count_event
+            and self.event_count >= self.rate_threshold
+            and cooldown_passed
+        ):
             alerts.append(
                 Alert(
                     time=_format_time(now),
@@ -196,6 +229,8 @@ class DetectionRules:
                     ),
                     event_type=event_type,
                     path=path,
+                    rule="mass_change",
+                    occurred_epoch=now,
                 )
             )
 

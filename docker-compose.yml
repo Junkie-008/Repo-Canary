@@ -1,0 +1,39 @@
+services:
+  engine:
+    build: .
+    image: repo-canary:latest
+    command: ["engine"]
+    environment:
+      REPO_CANARY_LAB: /data/lab
+    volumes:
+      - canary-data:/data
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    image: repo-canary:latest
+    command: ["dashboard"]
+    environment:
+      REPO_CANARY_LAB: /data/lab
+    volumes:
+      - canary-data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      - engine
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  canary-data:

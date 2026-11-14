@@ -1,43 +1,50 @@
-"""Restore the disposable lab data before a Ransomware 207 demo.
+"""Restore the disposable lab data before a Repo-Canary demo.
 
 Actions
 -------
-- deletes every *.locked file in the test folder
-- recreates the three canary files (_canary_01.txt .. _canary_03.txt)
-- recreates file1.txt .. file20.txt with harmless content
-- optionally clears findings.json (--clear-findings)
+- creates the lab marker (``.repo-canary-lab``) that the simulator requires
+- deletes every ``*.locked`` file in the test folder
+- recreates the three canary files (``_canary_01.txt`` .. ``_canary_03.txt``)
+- recreates ``file1.txt`` .. ``file20.txt`` with harmless content
+- optionally clears the SQLite findings (``--clear-findings``)
 
-Only the test folder and the findings file are touched.
+Only the test folder and the database are touched.
 
 Usage
 -----
-    py -3.12 reset_lab.py
-    py -3.12 reset_lab.py --yes --clear-findings
+    python scripts/reset_lab.py
+    python scripts/reset_lab.py --yes --clear-findings
 """
 
 import argparse
 from pathlib import Path
 
 import lab_config
+from database import FindingsDB
 from detection_rules import CANARY_FILES
 
 TEST_FILES = [f"file{number}.txt" for number in range(1, 21)]
 
-CANARY_TEXT = (
-    "This is a canary file. Ordinary work must never touch it.\n"
-)
+CANARY_TEXT = "This is a canary file. Ordinary work must never touch it.\n"
 
 TEST_TEXT = "Disposable test document. Safe to modify and delete.\n"
 
 
 def reset(
     test_dir: Path,
+    db_path: Path,
     findings_file: Path,
     clear_findings: bool = False,
 ) -> tuple:
     """Reset the lab folder and return (removed_locked, written_files)."""
 
     test_dir.mkdir(parents=True, exist_ok=True)
+
+    # The simulator refuses to run without this marker.
+    (test_dir / lab_config.LAB_MARKER).write_text(
+        "Repo-Canary disposable lab folder. Safe to modify.\n",
+        encoding="utf-8",
+    )
 
     removed = []
 
@@ -57,15 +64,21 @@ def reset(
         path.write_text(TEST_TEXT, encoding="utf-8")
         written.append(path)
 
-    if clear_findings and findings_file.exists():
-        findings_file.unlink()
+    if clear_findings:
+        if db_path.exists():
+            db = FindingsDB(db_path)
+            db.initialize()
+            db.clear_findings()
+
+        if findings_file.exists():
+            findings_file.unlink()
 
     return removed, written
 
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
-        description="Restore the Ransomware 207 disposable lab data",
+        description="Restore the Repo-Canary disposable lab data",
     )
 
     parser.add_argument(
@@ -75,15 +88,21 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--db-path",
+        default=str(lab_config.DB_FILE),
+        help=f"SQLite database (default: {lab_config.DB_FILE})",
+    )
+
+    parser.add_argument(
         "--findings",
         default=str(lab_config.FINDINGS_FILE),
-        help=f"findings JSON file (default: {lab_config.FINDINGS_FILE})",
+        help=f"legacy findings.json (default: {lab_config.FINDINGS_FILE})",
     )
 
     parser.add_argument(
         "--clear-findings",
         action="store_true",
-        help="delete findings.json as well",
+        help="clear findings from the database as well",
     )
 
     parser.add_argument(
@@ -100,6 +119,7 @@ def main(argv=None) -> int:
     args = parse_args(argv)
 
     test_dir = Path(args.test_dir)
+    db_path = Path(args.db_path)
     findings_file = Path(args.findings)
 
     if not args.yes:
@@ -107,7 +127,7 @@ def main(argv=None) -> int:
         print(f"  {test_dir}")
 
         if args.clear_findings:
-            print(f"and delete findings: {findings_file}")
+            print(f"and clear findings in: {db_path}")
 
         answer = input("Continue? [y/N] ").strip().lower()
 
@@ -117,6 +137,7 @@ def main(argv=None) -> int:
 
     removed, written = reset(
         test_dir,
+        db_path,
         findings_file,
         clear_findings=args.clear_findings,
     )
@@ -126,7 +147,7 @@ def main(argv=None) -> int:
     print(f"[+] Wrote {len(written)} disposable file(s)")
 
     if args.clear_findings:
-        print(f"[+] Cleared {findings_file}")
+        print(f"[+] Cleared findings in {db_path}")
 
     return 0
 

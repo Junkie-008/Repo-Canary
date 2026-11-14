@@ -220,4 +220,9 @@ testdata/
 
 # Lab runtime artifacts
 findings.json
+findings.json.migrated*
 *.locked
+canary.db
+canary.db-*
+error_log.txt
+reports/

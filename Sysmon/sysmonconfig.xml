@@ -2,8 +2,16 @@
   <HashAlgorithms>SHA256</HashAlgorithms>
 
   <EventFiltering>
-    <!-- This lab only needs file creation evidence. -->
-    <ProcessCreate onmatch="exclude" />
+    <!-- This lab only needs file creation evidence. An exclude rule with no
+         condition matches nothing (Sysmon then logs every process event), so
+         each unwanted event type needs a condition that always matches. -->
+    <ProcessCreate onmatch="exclude">
+      <Image condition="contains">\</Image>
+    </ProcessCreate>
+
+    <ProcessTerminate onmatch="exclude">
+      <Image condition="contains">\</Image>
+    </ProcessTerminate>
 
     <!-- Sysmon combines conditions inside one rule with AND, so each folder
          needs its own FileCreate rule. Rules are evaluated in order and the

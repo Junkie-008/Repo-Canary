@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Ransomware 207 | Detection Dashboard</title>
+    <title>Repo-Canary | Detection Dashboard</title>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: "Segoe UI", Arial, sans-serif;
@@ -29,1478 +25,1063 @@
         }
 
         .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
+            position: absolute; width: 1px; height: 1px;
+            padding: 0; margin: -1px; overflow: hidden;
+            clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
 
-        /* =========================
-           HEADER
-        ========================== */
-
+        /* HEADER */
         .header {
             background: linear-gradient(135deg, #0f3d68, #1f5d91);
             color: white;
-            padding: 22px 32px;
+            padding: 20px 30px;
             box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
         }
 
         .header-content {
-            max-width: 1400px;
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
+            max-width: 1500px; margin: auto;
+            display: flex; justify-content: space-between;
+            align-items: center; gap: 20px;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .brand { display: flex; align-items: center; gap: 14px; }
         .shield {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 46px; height: 46px; border-radius: 12px;
             background: rgba(255, 255, 255, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 26px;
-        }
-
-        .brand h1 {
+            display: flex; align-items: center; justify-content: center;
             font-size: 25px;
-            margin-bottom: 4px;
         }
-
-        .brand p {
-            font-size: 13px;
-            opacity: 0.85;
-        }
+        .brand h1 { font-size: 24px; margin-bottom: 3px; }
+        .brand p { font-size: 12px; opacity: 0.85; }
 
         .system-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 8px;
             background: rgba(255, 255, 255, 0.12);
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 13px;
-            white-space: nowrap;
+            padding: 9px 14px; border-radius: 20px;
+            font-size: 12px; white-space: nowrap;
         }
-
         .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+            width: 9px; height: 9px; border-radius: 50%;
+            background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
             flex-shrink: 0;
         }
-
+        .status-dot.warn {
+            background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+        }
         .status-dot.error {
-            background: #ef4444;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+            background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
         }
 
-        /* =========================
-           MAIN
-        ========================== */
-
-        .container {
-            max-width: 1400px;
-            margin: 28px auto;
-            padding: 0 24px;
-        }
-
-        /* =========================
-           BANNER
-        ========================== */
+        /* LAYOUT */
+        .container { max-width: 1500px; margin: 24px auto; padding: 0 22px; }
 
         .banner {
-            border-radius: 9px;
-            padding: 13px 16px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
+            border-radius: 9px; padding: 12px 15px; font-size: 13px;
+            margin-bottom: 18px; border: 1px solid transparent;
         }
+        .banner.error { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+        .banner.info { color: #1e40af; background: #eff6ff; border-color: #bfdbfe; }
+        .banner.warn { color: #92400e; background: #fffbeb; border-color: #fde68a; }
 
-        .banner.error {
-            color: #991b1b;
-            background: #fef2f2;
-            border-color: #fecaca;
-        }
+        .section-title { margin-bottom: 13px; }
+        .section-title h2 { font-size: 18px; color: #0f3d68; }
+        .section-title p { color: #64748b; font-size: 12px; margin-top: 3px; }
 
-        .banner.info {
-            color: #1e40af;
-            background: #eff6ff;
-            border-color: #bfdbfe;
-        }
-
-        /* =========================
-           OVERVIEW
-        ========================== */
-
-        .section-title {
-            margin-bottom: 15px;
-        }
-
-        .section-title h2 {
-            font-size: 19px;
-            color: #0f3d68;
-        }
-
-        .section-title p {
-            color: #64748b;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
+        /* CARDS */
         .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 28px;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 16px; margin-bottom: 22px;
         }
-
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
+            background: white; border-radius: 12px; padding: 18px;
             box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
             border: 1px solid #e2e8f0;
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
-
         .card::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 4px;
-            height: 100%;
+            content: ""; position: absolute; left: 0; top: 0;
+            width: 4px; height: 100%;
         }
+        .card.total::before { background: #2563eb; }
+        .card.confirmed::before { background: #7f1d1d; }
+        .card.critical::before { background: #dc2626; }
+        .card.high::before { background: #f59e0b; }
+        .card-label { color: #64748b; font-size: 12px; margin-bottom: 7px; }
+        .card-value { font-size: 28px; font-weight: 700; color: #0f172a; }
+        .card-description { margin-top: 6px; font-size: 11px; color: #94a3b8; }
 
-        .card.total::before {
-            background: #2563eb;
+        /* CHARTS */
+        .charts-grid {
+            display: grid; grid-template-columns: 2fr 1fr;
+            gap: 16px; margin-bottom: 22px;
         }
-
-        .card.critical::before {
-            background: #dc2626;
-        }
-
-        .card.high::before {
-            background: #f59e0b;
-        }
-
-        .card.medium::before {
-            background: #eab308;
-        }
-
-        .card-label {
-            color: #64748b;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
-
-        .card-value {
-            font-size: 30px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .card-description {
-            margin-top: 7px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-
-        /* =========================
-           LATEST ALERT
-        ========================== */
-
-        .latest-alert {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 28px;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
-        }
-
-        .latest-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .latest-header h2 {
-            font-size: 17px;
-            color: #0f3d68;
-        }
-
-        .latest-time {
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        .latest-content {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 15px;
-            border-radius: 9px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .alert-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 21px;
-            flex-shrink: 0;
-        }
-
-        .alert-icon.critical {
-            background: #fee2e2;
-        }
-
-        .alert-icon.high {
-            background: #fef3c7;
-        }
-
-        .alert-icon.medium {
-            background: #fef9c3;
-        }
-
-        .alert-icon.info {
-            background: #e2e8f0;
-        }
-
-        .latest-text {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .latest-text strong {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #0f172a;
-            word-break: break-word;
-        }
-
-        .latest-text span {
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        /* =========================
-           FINDINGS PANEL
-        ========================== */
-
-        .findings-panel {
-            background: white;
-            border-radius: 12px;
+        .panel {
+            background: white; border-radius: 12px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
             overflow: hidden;
         }
+        .panel-pad { padding: 16px 18px; }
+        .panel-title {
+            display: flex; justify-content: space-between;
+            align-items: baseline; gap: 10px; margin-bottom: 10px;
+        }
+        .panel-title h2 { font-size: 15px; color: #0f3d68; }
+        .panel-title span { font-size: 11px; color: #94a3b8; }
+        .chart-box { height: 230px; position: relative; }
 
+        /* HEATMAP */
+        .heat-wrap { overflow-x: auto; padding: 0 18px 16px; }
+        table.heat { border-collapse: collapse; width: 100%; font-size: 11px; }
+        table.heat th {
+            color: #64748b; font-weight: 600; padding: 5px 4px;
+            text-align: center; white-space: nowrap;
+        }
+        table.heat th:first-child { text-align: left; }
+        table.heat td { padding: 3px 4px; text-align: center; }
+        .heat-name {
+            text-align: left !important; max-width: 180px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            color: #334155; padding-right: 10px !important;
+        }
+        .heat-cell {
+            display: block; border-radius: 4px; min-width: 26px;
+            padding: 4px 2px; color: #450a0a; font-weight: 600;
+        }
+        .heat-cell.empty { color: #cbd5e1; }
+
+        /* LATEST */
+        .latest-alert {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 18px; margin-bottom: 22px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+        }
+        .latest-header {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
+        }
+        .latest-header h2 { font-size: 16px; color: #0f3d68; }
+        .latest-time { font-size: 12px; color: #64748b; }
+        .latest-content {
+            display: flex; align-items: center; gap: 14px;
+            padding: 13px; border-radius: 9px;
+            background: #f8fafc; border: 1px solid #e2e8f0;
+        }
+        .alert-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 19px; flex-shrink: 0; background: #e2e8f0;
+        }
+        .alert-icon.confirmed { background: #fee2e2; }
+        .alert-icon.critical { background: #fee2e2; }
+        .alert-icon.high { background: #fef3c7; }
+        .latest-text { flex: 1; min-width: 0; }
+        .latest-text strong {
+            display: block; font-size: 13px; margin-bottom: 4px;
+            color: #0f172a; word-break: break-word;
+        }
+        .latest-text span { font-size: 12px; color: #64748b; }
+
+        /* FINDINGS */
+        .findings-panel {
+            background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08); overflow: hidden;
+        }
         .findings-header {
-            padding: 20px 22px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 14px;
-            flex-wrap: wrap;
+            padding: 18px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            gap: 14px; flex-wrap: wrap;
         }
-
-        .findings-header h2 {
-            color: #0f3d68;
-            font-size: 17px;
-        }
-
-        .findings-subtitle {
-            color: #64748b;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .refresh-info {
-            font-size: 12px;
-            color: #64748b;
-        }
+        .findings-header h2 { color: #0f3d68; font-size: 16px; }
+        .findings-subtitle { color: #64748b; font-size: 12px; margin-top: 3px; }
+        .refresh-info { font-size: 12px; color: #64748b; }
 
         .toolbar {
-            padding: 14px 22px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            background: #fbfdff;
+            padding: 12px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; flex-wrap: wrap; background: #fbfdff;
         }
-
-        .chips {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-        }
-
+        .chips { display: flex; gap: 6px; flex-wrap: wrap; }
         .chip {
-            border: 1px solid #cbd5e1;
-            background: white;
-            color: #475569;
-            border-radius: 20px;
-            padding: 6px 12px;
-            font: inherit;
-            font-size: 12px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            border: 1px solid #cbd5e1; background: white; color: #475569;
+            border-radius: 20px; padding: 5px 11px; font: inherit;
+            font-size: 11px; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 5px;
             transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
-
-        .chip:hover {
-            border-color: #94a3b8;
-        }
-
-        .chip.is-active {
-            background: #0f3d68;
-            border-color: #0f3d68;
-            color: white;
-        }
-
+        .chip:hover { border-color: #94a3b8; }
+        .chip.is-active { background: #0f3d68; border-color: #0f3d68; color: white; }
         .chip-count {
-            font-size: 11px;
-            font-weight: 700;
-            background: #e2e8f0;
-            color: #334155;
-            border-radius: 10px;
-            padding: 1px 7px;
+            font-size: 10px; font-weight: 700; background: #e2e8f0;
+            color: #334155; border-radius: 10px; padding: 1px 6px;
         }
-
         .chip.is-active .chip-count {
-            background: rgba(255, 255, 255, 0.22);
-            color: white;
+            background: rgba(255, 255, 255, 0.22); color: white;
         }
 
         .toolbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
         }
-
-        .search input {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 8px 11px;
-            font: inherit;
-            font-size: 12px;
-            width: 210px;
-            color: #1e293b;
-            background: white;
+        .search input, .toolbar select {
+            border: 1px solid #cbd5e1; border-radius: 8px;
+            padding: 7px 10px; font: inherit; font-size: 12px;
+            color: #1e293b; background: white;
         }
-
-        .search input:focus {
-            outline: 2px solid #1f5d91;
-            outline-offset: 1px;
+        .search input { width: 190px; }
+        .search input:focus, .toolbar select:focus {
+            outline: 2px solid #1f5d91; outline-offset: 1px;
         }
-
         .button {
-            border: 1px solid #cbd5e1;
-            background: white;
-            color: #334155;
-            border-radius: 8px;
-            padding: 8px 13px;
-            font: inherit;
-            font-size: 12px;
-            cursor: pointer;
+            border: 1px solid #cbd5e1; background: white; color: #334155;
+            border-radius: 8px; padding: 7px 12px; font: inherit;
+            font-size: 12px; cursor: pointer;
             transition: background 0.15s, border-color 0.15s;
         }
+        .button:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .button[aria-pressed="true"] { background: #0f3d68; border-color: #0f3d68; color: white; }
+        .button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-        .button:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
-        }
-
-        .button[aria-pressed="true"] {
-            background: #0f3d68;
-            border-color: #0f3d68;
-            color: white;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #0f3d68;
-            color: white;
-        }
-
-        th {
-            padding: 13px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-        }
-
+        .table-wrapper { overflow-x: auto; }
+        table.findings { width: 100%; border-collapse: collapse; }
+        thead { background: #0f3d68; color: white; }
+        th { padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 600; }
         td {
-            padding: 13px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 12px;
-            vertical-align: middle;
+            padding: 11px 14px; border-bottom: 1px solid #e2e8f0;
+            font-size: 12px; vertical-align: middle;
         }
-
-        tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .time {
-            color: #64748b;
-            white-space: nowrap;
-            font-family: Consolas, monospace;
-        }
-
-        .finding {
-            color: #334155;
-            max-width: 700px;
-            word-break: break-word;
-        }
-
-        .table-footer {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            padding: 12px 22px;
-            border-top: 1px solid #e2e8f0;
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        /* =========================
-           SEVERITY BADGES
-        ========================== */
+        tbody tr:hover { background: #f8fafc; }
+        .time { color: #64748b; white-space: nowrap; font-family: Consolas, monospace; }
+        .finding { color: #334155; max-width: 520px; word-break: break-word; }
+        .finding small { display: block; color: #94a3b8; margin-top: 3px; word-break: break-all; }
+        .process { color: #475569; font-size: 11px; }
+        .process small { display: block; color: #94a3b8; }
 
         .severity {
-            display: inline-block;
-            min-width: 72px;
-            text-align: center;
-            padding: 5px 9px;
-            border-radius: 5px;
-            font-size: 11px;
-            font-weight: 700;
-            color: white;
+            display: inline-block; min-width: 74px; text-align: center;
+            padding: 4px 8px; border-radius: 5px;
+            font-size: 10px; font-weight: 700; color: white; white-space: nowrap;
         }
+        .severity-confirmed { background: #7f1d1d; }
+        .severity-critical { background: #dc2626; }
+        .severity-high { background: #f59e0b; }
+        .severity-medium { background: #eab308; }
+        .severity-info { background: #64748b; }
 
-        .severity-critical {
-            background: #dc2626;
+        .table-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; flex-wrap: wrap;
+            padding: 11px 20px; border-top: 1px solid #e2e8f0;
+            font-size: 12px; color: #64748b;
         }
+        .pager { display: flex; gap: 7px; align-items: center; }
 
-        .severity-high {
-            background: #f59e0b;
-        }
-
-        .severity-medium {
-            background: #eab308;
-        }
-
-        .severity-info {
-            background: #64748b;
-        }
-
-        /* =========================
-           EMPTY STATE
-        ========================== */
-
-        .message {
-            padding: 40px 20px;
-            text-align: center;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        /* =========================
-           FOOTER
-        ========================== */
+        .message { padding: 36px 20px; text-align: center; color: #64748b; font-size: 13px; }
 
         .footer {
-            max-width: 1400px;
-            margin: 22px auto;
-            padding: 0 24px 25px;
-            color: #94a3b8;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
+            max-width: 1500px; margin: 20px auto; padding: 0 22px 22px;
+            color: #94a3b8; font-size: 11px;
+            display: flex; justify-content: space-between; gap: 18px;
         }
 
-        /* =========================
-           RESPONSIVE
-        ========================== */
-
-        @media (max-width: 900px) {
-            .cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+        @media (max-width: 1000px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .cards { grid-template-columns: repeat(2, 1fr); }
         }
-
-        @media (max-width: 600px) {
-            .cards {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 0 12px;
-            }
-
-            .header {
-                padding: 18px;
-            }
-
-            .latest-content {
-                align-items: flex-start;
-            }
-
-            .toolbar {
-                padding: 12px;
-            }
-
-            .search input {
-                width: 100%;
-            }
-
-            .footer {
-                padding: 0 12px 20px;
-                flex-direction: column;
-            }
+        @media (max-width: 700px) {
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .cards { grid-template-columns: 1fr; }
+            .container { padding: 0 12px; }
+            .search input { width: 100%; }
+            .footer { flex-direction: column; }
         }
     </style>
 </head>
 
 <body>
 
-    <!-- =========================
-         HEADER
-    ========================== -->
-
-    <header class="header">
-
-        <div class="header-content">
-
-            <div class="brand">
-
-                <div class="shield">
-                    🛡️
-                </div>
-
-                <div>
-                    <h1>Ransomware 207</h1>
-                    <p>Live Ransomware Detection &amp; Incident Monitoring</p>
-                </div>
-
+<header class="header">
+    <div class="header-content">
+        <div class="brand">
+            <div class="shield">🛡️</div>
+            <div>
+                <h1>Repo-Canary</h1>
+                <p>Ransomware Detection &amp; Incident Monitoring</p>
             </div>
-
-            <div class="system-status" role="status" aria-live="polite">
-
-                <span id="statusDot" class="status-dot"></span>
-
-                <span id="statusText">
-                    Connecting...
-                </span>
-
-            </div>
-
         </div>
 
-    </header>
-
-
-    <!-- =========================
-         MAIN CONTENT
-    ========================== -->
-
-    <main class="container">
-
-        <div id="alertBanner" class="banner" role="alert" hidden></div>
-
-
-        <!-- Overview -->
-
-        <div class="section-title">
-
-            <h2>Detection Overview</h2>
-
-            <p>
-                Real-time findings generated by the Ransomware 207 detection engine.
-            </p>
-
+        <div class="system-status" role="status" aria-live="polite">
+            <span id="statusDot" class="status-dot"></span>
+            <span id="statusText">Connecting…</span>
         </div>
+    </div>
+</header>
 
+<main class="container">
 
-        <div class="cards">
+    <div id="alertBanner" class="banner" role="alert" hidden></div>
 
-            <div class="card total">
+    <div class="section-title">
+        <h2>Detection Overview</h2>
+        <p>Findings stored in SQLite, enriched with Sysmon attribution and SHA-256 intelligence.</p>
+    </div>
 
-                <div class="card-label">
-                    Total Findings
-                </div>
-
-                <div id="totalCount" class="card-value">
-                    0
-                </div>
-
-                <div class="card-description">
-                    Recorded detection events
-                </div>
-
-            </div>
-
-
-            <div class="card critical">
-
-                <div class="card-label">
-                    Critical
-                </div>
-
-                <div id="criticalCount" class="card-value">
-                    0
-                </div>
-
-                <div class="card-description">
-                    Canary detections
-                </div>
-
-            </div>
-
-
-            <div class="card high">
-
-                <div class="card-label">
-                    High
-                </div>
-
-                <div id="highCount" class="card-value">
-                    0
-                </div>
-
-                <div class="card-description">
-                    Mass-change alerts
-                </div>
-
-            </div>
-
-
-            <div class="card medium">
-
-                <div class="card-label">
-                    Medium / Info
-                </div>
-
-                <div id="otherCount" class="card-value">
-                    0
-                </div>
-
-                <div class="card-description">
-                    Other recorded findings
-                </div>
-
-            </div>
-
+    <div class="cards">
+        <div class="card confirmed">
+            <div class="card-label">Confirmed Ransomware</div>
+            <div id="confirmedCount" class="card-value">0</div>
+            <div class="card-description">Hash matches (24 h)</div>
         </div>
+        <div class="card critical">
+            <div class="card-label">Critical</div>
+            <div id="criticalCount" class="card-value">0</div>
+            <div class="card-description">Canary detections (24 h)</div>
+        </div>
+        <div class="card high">
+            <div class="card-label">High</div>
+            <div id="highCount" class="card-value">0</div>
+            <div class="card-description">Mass-change alerts (24 h)</div>
+        </div>
+        <div class="card total">
+            <div class="card-label">Total Findings</div>
+            <div id="totalCount" class="card-value">0</div>
+            <div class="card-description">All time</div>
+        </div>
+    </div>
 
-
-        <!-- Latest Alert -->
-
-        <section class="latest-alert">
-
-            <div class="latest-header">
-
-                <h2>Latest Detection</h2>
-
-                <span id="latestTime" class="latest-time">
-                    No findings yet
-                </span>
-
-            </div>
-
-
-            <div id="latestContent" class="latest-content" aria-live="polite">
-
-                <div class="alert-icon info">
-                    ℹ️
+    <div id="charts" class="charts-grid">
+        <section class="panel">
+            <div class="panel-pad">
+                <div class="panel-title">
+                    <h2>File events per minute</h2>
+                    <span>UTC · last 60 minutes</span>
                 </div>
-
-                <div class="latest-text">
-
-                    <strong>
-                        Waiting for detection data...
-                    </strong>
-
-                    <span>
-                        The dashboard is monitoring findings.json.
-                    </span>
-
+                <div class="chart-box">
+                    <canvas id="eventsChart" aria-label="File events per minute"></canvas>
                 </div>
-
             </div>
-
         </section>
 
-
-        <!-- Findings Table -->
-
-        <section class="findings-panel">
-
-            <div class="findings-header">
-
-                <div>
-
-                    <h2>Live Findings</h2>
-
-                    <p class="findings-subtitle">
-                        Every alert raised by the detection engine.
-                    </p>
-
+        <section class="panel">
+            <div class="panel-pad">
+                <div class="panel-title">
+                    <h2>Top processes</h2>
+                    <span>24 h</span>
                 </div>
-
-                <div class="refresh-info">
-                    <span id="refreshMode">Auto-refresh: 3 s</span>
-                    •
-                    Last update:
-                    <span id="lastUpdate">
-                        --
-                    </span>
+                <div class="chart-box">
+                    <canvas id="processChart" aria-label="Top processes by findings"></canvas>
                 </div>
-
             </div>
-
-
-            <div class="toolbar">
-
-                <div class="chips" role="group" aria-label="Filter findings by severity">
-
-                    <button type="button" class="chip is-active" data-filter="all">
-                        All <span class="chip-count" id="countAll">0</span>
-                    </button>
-
-                    <button type="button" class="chip" data-filter="critical">
-                        Critical <span class="chip-count" id="countCritical">0</span>
-                    </button>
-
-                    <button type="button" class="chip" data-filter="high">
-                        High <span class="chip-count" id="countHigh">0</span>
-                    </button>
-
-                    <button type="button" class="chip" data-filter="medium">
-                        Medium <span class="chip-count" id="countMedium">0</span>
-                    </button>
-
-                    <button type="button" class="chip" data-filter="info">
-                        Info <span class="chip-count" id="countInfo">0</span>
-                    </button>
-
-                </div>
-
-
-                <div class="toolbar-actions">
-
-                    <label class="search">
-
-                        <span class="sr-only">Search findings</span>
-
-                        <input
-                            id="searchInput"
-                            type="search"
-                            placeholder="Search findings…"
-                            autocomplete="off"
-                        >
-
-                    </label>
-
-                    <button type="button" id="pauseButton" class="button" aria-pressed="false">
-                        Pause
-                    </button>
-
-                    <button type="button" id="refreshButton" class="button">
-                        Refresh
-                    </button>
-
-                    <button type="button" id="exportButton" class="button">
-                        Export CSV
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div id="tableContainer" class="table-wrapper">
-
-                <div class="message">
-                    Loading findings...
-                </div>
-
-            </div>
-
-
-            <div class="table-footer">
-
-                <span id="showingCount">
-                    0 of 0 findings
-                </span>
-
-                <span>
-                    Source: <code>findings.json</code>
-                </span>
-
-            </div>
-
         </section>
+    </div>
 
-    </main>
+    <div id="chartFallback" class="banner info" hidden>
+        Chart.js could not be loaded, so the graphs are hidden. The tables below still work.
+    </div>
 
-
-    <!-- =========================
-         FOOTER
-    ========================== -->
-
-    <footer class="footer">
-
-        <span>
-            Ransomware 207 • Defensive Cybersecurity Lab
-        </span>
-
-        <span>
-            Watching: <code>testdata</code>
-            • Source: <code>findings.json</code>
-        </span>
-
-    </footer>
-
-
-    <noscript>
-        <div class="message">
-            The dashboard needs JavaScript enabled to load findings.json.
+    <section class="panel" style="margin-bottom: 22px;">
+        <div class="panel-pad">
+            <div class="panel-title">
+                <h2>Process activity heatmap</h2>
+                <span>Findings per hour · last 12 hours (UTC)</span>
+            </div>
+            <div id="heatmap" class="heat-wrap">
+                <div class="message">No attributed process findings yet.</div>
+            </div>
         </div>
-    </noscript>
+    </section>
 
+    <section class="latest-alert">
+        <div class="latest-header">
+            <h2>Latest Detection</h2>
+            <span id="latestTime" class="latest-time">No findings yet</span>
+        </div>
 
-    <!-- =========================
-         JAVASCRIPT
-    ========================== -->
+        <div id="latestContent" class="latest-content" aria-live="polite">
+            <div class="alert-icon">ℹ️</div>
+            <div class="latest-text">
+                <strong>Waiting for detection data…</strong>
+                <span>The dashboard is reading canary.db.</span>
+            </div>
+        </div>
+    </section>
 
-    <script>
+    <section class="findings-panel">
+        <div class="findings-header">
+            <div>
+                <h2>Live Findings</h2>
+                <p class="findings-subtitle">Server-side filters, pagination and export.</p>
+            </div>
+            <div class="refresh-info">
+                <span id="refreshMode">Auto-refresh: 2 s</span>
+                • Last update: <span id="lastUpdate">--</span>
+            </div>
+        </div>
 
-        const FINDINGS_FILE = "findings.json";
-        const REFRESH_MS = 3000;
+        <div class="toolbar">
+            <div class="chips" role="group" aria-label="Filter findings by severity">
+                <button type="button" class="chip is-active" data-filter="all">
+                    All <span class="chip-count" id="countAll">0</span>
+                </button>
+                <button type="button" class="chip" data-filter="Confirmed Ransomware">
+                    Confirmed <span class="chip-count" id="countConfirmed">0</span>
+                </button>
+                <button type="button" class="chip" data-filter="Critical">
+                    Critical <span class="chip-count" id="countCritical">0</span>
+                </button>
+                <button type="button" class="chip" data-filter="High">
+                    High <span class="chip-count" id="countHigh">0</span>
+                </button>
+                <button type="button" class="chip" data-filter="Medium">
+                    Medium <span class="chip-count" id="countMedium">0</span>
+                </button>
+                <button type="button" class="chip" data-filter="Info">
+                    Info <span class="chip-count" id="countInfo">0</span>
+                </button>
+            </div>
 
-        let allRows = [];
-        let activeFilter = "all";
-        let searchTerm = "";
-        let paused = false;
-        let hasLoadedOnce = false;
+            <div class="toolbar-actions">
+                <label class="search">
+                    <span class="sr-only">Search findings</span>
+                    <input id="searchInput" type="search" placeholder="Search summary, path, intel…" autocomplete="off">
+                </label>
 
-        let lastTableHtml = "";
-        let lastLatestHtml = "";
-        let bannerTimer = null;
+                <label>
+                    <span class="sr-only">Filter by rule</span>
+                    <select id="ruleSelect" aria-label="Filter by rule">
+                        <option value="">All rules</option>
+                        <option value="hash_match">Hash match</option>
+                        <option value="canary">Canary</option>
+                        <option value="mass_change">Mass change</option>
+                        <option value="legacy">Legacy</option>
+                    </select>
+                </label>
 
+                <button type="button" id="pauseButton" class="button" aria-pressed="false">Pause</button>
+                <button type="button" id="refreshButton" class="button">Refresh</button>
+                <button type="button" id="exportCsv" class="button">CSV</button>
+                <button type="button" id="exportJsonl" class="button">JSONL</button>
+            </div>
+        </div>
 
-        /*
-         * Escape HTML characters.
-         * This prevents finding text from being interpreted as HTML.
-         */
+        <div id="tableContainer" class="table-wrapper">
+            <div class="message">Loading findings…</div>
+        </div>
 
-        function escapeHtml(value) {
+        <div class="table-footer">
+            <span id="showingCount">0 of 0 findings</span>
+            <div class="pager">
+                <button type="button" id="prevPage" class="button" disabled>Previous</button>
+                <span id="pageLabel">Page 1</span>
+                <button type="button" id="nextPage" class="button" disabled>Next</button>
+            </div>
+            <span>Source: <code>canary.db</code></span>
+        </div>
+    </section>
 
-            return String(value === undefined || value === null ? "" : value)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+</main>
+
+<footer class="footer">
+    <span>Repo-Canary 2.0 • Defensive Cybersecurity Lab</span>
+    <span>Watching: <code>testdata</code> • Database: <code>canary.db</code></span>
+</footer>
+
+<noscript>
+    <div class="message">The dashboard needs JavaScript to load findings.</div>
+</noscript>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script>
+const REFRESH_MS = 2000;
+const PAGE_SIZE = 25;
+
+const state = {
+    rows: [],
+    total: 0,
+    offset: 0,
+    severity: "all",
+    rule: "",
+    q: "",
+    paused: false,
+    loaded: false,
+    engineAlive: null,
+    stats: null,
+    latest: null,
+    charts: {},
+    tableSignature: "",
+    heatmapSignature: "",
+    latestSignature: "",
+    chartsAvailable: typeof Chart !== "undefined",
+};
+
+const $ = id => document.getElementById(id);
+
+/* ------------------------------------------------------------------ */
+/* Utilities                                                           */
+/* ------------------------------------------------------------------ */
+
+function escapeHtml(value) {
+    return String(value === undefined || value === null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function severityKey(severity) {
+    const value = String(severity || "Info").toLowerCase();
+
+    if (value === "confirmed ransomware") return "confirmed";
+    if (["critical", "high", "medium"].includes(value)) return value;
+    return "info";
+}
+
+function severityLabel(severity) {
+    return severityKey(severity) === "confirmed" ? "Confirmed" : String(severity || "Info");
+}
+
+function formatTime(value) {
+    if (!value) return "--";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    return date.toLocaleString(undefined, {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+}
+
+function setStatus(tone, text) {
+    const dot = $("statusDot");
+    dot.classList.toggle("error", tone === "error");
+    dot.classList.toggle("warn", tone === "warn");
+    $("statusText").textContent = text;
+}
+
+let bannerTimer = null;
+
+function showBanner(message, tone) {
+    const banner = $("alertBanner");
+    banner.textContent = message;
+    banner.className = "banner " + (tone || "error");
+    banner.hidden = false;
+
+    clearTimeout(bannerTimer);
+
+    if (tone === "info" || tone === "warn") {
+        bannerTimer = setTimeout(() => { banner.hidden = true; }, 6000);
+    }
+}
+
+function hideBanner() {
+    clearTimeout(bannerTimer);
+    $("alertBanner").hidden = true;
+}
+
+async function api(path, params) {
+    const url = new URL(path, window.location.origin);
+
+    Object.entries(params || {}).forEach(([key, value]) => {
+        if (value !== "" && value !== null && value !== undefined) {
+            url.searchParams.set(key, value);
         }
-
-
-        /*
-         * Normalise a severity into one of four dashboard buckets.
-         */
-
-        function severityKey(severity) {
-
-            const value = String(severity || "Info").toLowerCase();
-
-            if (value === "critical" || value === "high" || value === "medium") {
-                return value;
-            }
-
-            return "info";
-        }
-
-
-        function getSeverityClass(severity) {
-            return "severity-" + severityKey(severity);
-        }
-
-
-        function getSeverityIcon(severity) {
-
-            const key = severityKey(severity);
-
-            if (key === "critical") {
-                return "🚨";
-            }
-
-            if (key === "high") {
-                return "⚠️";
-            }
-
-            if (key === "medium") {
-                return "⚡";
-            }
-
-            return "ℹ️";
-        }
-
-
-        /*
-         * Connection status + banner.
-         */
-
-        function setConnectionStatus(connected, text) {
-
-            const dot = document.getElementById("statusDot");
-            const label = document.getElementById("statusText");
-
-            dot.classList.toggle("error", !connected);
-            label.textContent = text;
-        }
-
-
-        function showBanner(message, tone) {
-
-            const banner = document.getElementById("alertBanner");
-
-            banner.textContent = message;
-            banner.className = "banner " + (tone || "error");
-            banner.hidden = false;
-
-            clearTimeout(bannerTimer);
-
-            if (tone === "info") {
-                bannerTimer = setTimeout(hideBanner, 4000);
-            }
-        }
-
-
-        function hideBanner() {
-
-            const banner = document.getElementById("alertBanner");
-
-            clearTimeout(bannerTimer);
-            banner.hidden = true;
-        }
-
-
-        /*
-         * Filtering.
-         */
-
-        function matchesFilters(row) {
-
-            if (activeFilter !== "all" && severityKey(row.severity) !== activeFilter) {
-                return false;
-            }
-
-            if (!searchTerm) {
-                return true;
-            }
-
-            return [
-                row.summary,
-                row.time,
-                row.severity,
-            ].some(value => String(value || "").toLowerCase().includes(searchTerm));
-        }
-
-
-        function summarize(rows) {
-
-            const counts = {
-                all: rows.length,
-                critical: 0,
-                high: 0,
-                medium: 0,
-                info: 0,
-            };
-
-            rows.forEach(row => {
-                counts[severityKey(row.severity)] += 1;
-            });
-
-            return counts;
-        }
-
-
-        /*
-         * Statistics + filter chip counts.
-         */
-
-        function updateStatistics(counts) {
-
-            document.getElementById("totalCount").textContent = counts.all;
-            document.getElementById("criticalCount").textContent = counts.critical;
-            document.getElementById("highCount").textContent = counts.high;
-            document.getElementById("otherCount").textContent =
-                counts.medium + counts.info;
-
-            document.getElementById("countAll").textContent = counts.all;
-            document.getElementById("countCritical").textContent = counts.critical;
-            document.getElementById("countHigh").textContent = counts.high;
-            document.getElementById("countMedium").textContent = counts.medium;
-            document.getElementById("countInfo").textContent = counts.info;
-        }
-
-
-        /*
-         * Latest detection card.
-         */
-
-        function buildLatestHtml(latest) {
-
-            if (!latest) {
-                return `
-                    <div class="alert-icon info">
-                        ℹ️
-                    </div>
-
-                    <div class="latest-text">
-
-                        <strong>
-                            No findings recorded.
-                        </strong>
-
-                        <span>
-                            The detector has not generated an alert yet.
-                        </span>
-
-                    </div>
-                `;
-            }
-
-            const severity = String(latest.severity || "Info");
-
-            return `
-                <div class="alert-icon ${severityKey(severity)}">
-                    ${getSeverityIcon(severity)}
-                </div>
-
-                <div class="latest-text">
-
-                    <strong>
-                        ${escapeHtml(latest.summary || "Unknown finding")}
-                    </strong>
-
-                    <span>
-                        Severity: ${escapeHtml(severity)}
-                    </span>
-
-                </div>
-
-                <span class="severity ${getSeverityClass(severity)}">
-                    ${escapeHtml(severity)}
-                </span>
-            `;
-        }
-
-
-        function updateLatest(rows) {
-
-            const content = document.getElementById("latestContent");
-            const time = document.getElementById("latestTime");
-
-            const latest = rows.length ? rows[rows.length - 1] : null;
-
-            time.textContent = latest
-                ? (latest.time || "Unknown time")
-                : "No findings yet";
-
-            const html = buildLatestHtml(latest);
-
-            /*
-             * Only rewrite the live region when the alert actually changes,
-             * otherwise every 3-second poll would re-announce it.
-             */
-
-            if (html === lastLatestHtml) {
-                return;
-            }
-
-            lastLatestHtml = html;
-            content.innerHTML = html;
-        }
-
-
-        /*
-         * Findings table.
-         */
-
-        function buildTableHtml(rows) {
-
-            if (!allRows.length) {
-                return `
-                    <div class="message">
-                        No findings have been recorded yet.
-                    </div>
-                `;
-            }
-
-            if (!rows.length) {
-                return `
-                    <div class="message">
-                        No findings match the current filter or search.
-                    </div>
-                `;
-            }
-
-            const newestFirst = rows.slice().reverse();
-
-            let html = `
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th scope="col" style="width: 190px;">
-                                Time
-                            </th>
-
-                            <th scope="col">
-                                Finding
-                            </th>
-
-                            <th scope="col" style="width: 120px;">
-                                Severity
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-            `;
-
-            newestFirst.forEach(row => {
-
-                const severity = String(row.severity || "Info");
-
-                html += `
-                    <tr>
-
-                        <td class="time">
-                            ${escapeHtml(row.time || "--")}
-                        </td>
-
-                        <td class="finding">
-                            ${escapeHtml(row.summary || "Unknown finding")}
-                        </td>
-
-                        <td>
-
-                            <span class="severity ${getSeverityClass(severity)}">
-                                ${escapeHtml(severity)}
-                            </span>
-
-                        </td>
-
-                    </tr>
-                `;
-            });
-
-            html += `
-                    </tbody>
-
-                </table>
-            `;
-
-            return html;
-        }
-
-
-        function updateTable(rows) {
-
-            const container = document.getElementById("tableContainer");
-            const html = buildTableHtml(rows);
-
-            /*
-             * Re-rendering identical HTML every poll causes flicker and
-             * loses text selection, so only touch the DOM when it changes.
-             */
-
-            if (html === lastTableHtml) {
-                return;
-            }
-
-            lastTableHtml = html;
-            container.innerHTML = html;
-        }
-
-
-        function renderAll() {
-
-            const counts = summarize(allRows);
-            const filtered = allRows.filter(matchesFilters);
-
-            updateStatistics(counts);
-            updateLatest(allRows);
-            updateTable(filtered);
-
-            document.getElementById("showingCount").textContent =
-                filtered.length + " of " + allRows.length +
-                (allRows.length === 1 ? " finding" : " findings");
-        }
-
-
-        /*
-         * CSV export of the current view.
-         */
-
-        function csvEscape(value) {
-
-            return '"' + String(value === undefined || value === null ? "" : value)
-                .replace(/"/g, '""') + '"';
-        }
-
-
-        function exportCsv() {
-
-            const rows = allRows.filter(matchesFilters);
-
-            if (!rows.length) {
-                showBanner("There are no findings to export with the current filter.", "info");
-                return;
-            }
-
-            const lines = ["Time,Finding,Severity"];
-
-            rows.forEach(row => {
-                lines.push(
-                    [row.time, row.summary, row.severity]
-                        .map(csvEscape)
-                        .join(",")
-                );
-            });
-
-            const blob = new Blob(
-                ["\ufeff" + lines.join("\r\n")],
-                { type: "text/csv;charset=utf-8" }
-            );
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-
-            link.href = url;
-            link.download = "ransomware-207-findings.csv";
-
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }
-
-
-        /*
-         * Load findings.json.
-         */
-
-        async function loadFindings() {
-
-            try {
-
-                /*
-                 * Cache-busting query parameter.
-                 * This forces the browser to request the newest file.
-                 */
-
-                const response = await fetch(
-                    FINDINGS_FILE + "?t=" + Date.now(),
-                    { cache: "no-store" }
-                );
-
-                if (!response.ok) {
-                    throw new Error("HTTP " + response.status);
-                }
-
-                const rows = await response.json();
-
-                if (!Array.isArray(rows)) {
-                    throw new Error("findings.json does not contain an array");
-                }
-
-                allRows = rows;
-                hasLoadedOnce = true;
-
-                hideBanner();
-
-                setConnectionStatus(
-                    true,
-                    paused
-                        ? "Paused • showing last data"
-                        : "Connected • live monitoring"
-                );
-
-                renderAll();
-
-                document.getElementById("lastUpdate").textContent =
-                    new Date().toLocaleTimeString();
-
-            }
-
-            catch (error) {
-
-                console.error("Dashboard error:", error);
-
-                setConnectionStatus(false, "Connection error");
-
-                showBanner(
-                    "Unable to load findings.json (" + error.message + "). " +
-                    "Start scripts/dashboard_server.py, or serve this page " +
-                    "next to findings.json.",
-                    "error"
-                );
-
-                /*
-                 * Keep the last good table on screen. Only show a placeholder
-                 * when the dashboard has never received data.
-                 */
-
-                if (!hasLoadedOnce) {
-
-                    lastTableHtml = "";
-
-                    document.getElementById("tableContainer").innerHTML = `
-                        <div class="message">
-                            No data yet. Waiting for findings.json.
-                        </div>
-                    `;
-                }
-
-            }
-        }
-
-
-        /*
-         * Controls.
-         */
-
-        document.querySelectorAll(".chip").forEach(chip => {
-
-            chip.addEventListener("click", () => {
-
-                activeFilter = chip.dataset.filter;
-
-                document.querySelectorAll(".chip").forEach(other => {
-                    other.classList.toggle("is-active", other === chip);
-                });
-
-                renderAll();
-            });
+    });
+
+    const response = await fetch(url, { cache: "no-store" });
+
+    if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+    }
+
+    return response.json();
+}
+
+function activeFilters() {
+    const filters = {};
+
+    if (state.severity !== "all") filters.severity = state.severity;
+    if (state.rule) filters.rule = state.rule;
+    if (state.q) filters.q = state.q;
+
+    return filters;
+}
+
+/* ------------------------------------------------------------------ */
+/* Stats + cards                                                       */
+/* ------------------------------------------------------------------ */
+
+function applyStats(stats) {
+    state.stats = stats;
+
+    const bySeverity = stats.by_severity || {};
+    const confirmed = bySeverity["Confirmed Ransomware"] || 0;
+    const critical = bySeverity["Critical"] || 0;
+    const high = bySeverity["High"] || 0;
+    const medium = bySeverity["Medium"] || 0;
+    const info = bySeverity["Info"] || 0;
+
+    $("confirmedCount").textContent = confirmed;
+    $("criticalCount").textContent = critical;
+    $("highCount").textContent = high;
+    $("totalCount").textContent = stats.total || 0;
+
+    $("countAll").textContent = stats.total || 0;
+    $("countConfirmed").textContent = confirmed;
+    $("countCritical").textContent = critical;
+    $("countHigh").textContent = high;
+    $("countMedium").textContent = medium;
+    $("countInfo").textContent = info;
+
+    state.engineAlive = Boolean(stats.engine && stats.engine.alive);
+    state.latest = stats.latest || null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Findings table                                                      */
+/* ------------------------------------------------------------------ */
+
+function buildTable(rows) {
+    if (!rows.length) {
+        return `<div class="message">No findings match the current filter or search.</div>`;
+    }
+
+    let html = `
+        <table class="findings">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 170px;">Time (local)</th>
+                    <th scope="col" style="width: 110px;">Severity</th>
+                    <th scope="col" style="width: 105px;">Rule</th>
+                    <th scope="col">Finding</th>
+                    <th scope="col" style="width: 190px;">Process</th>
+                    <th scope="col" style="width: 70px;">Report</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    rows.forEach(row => {
+        const key = severityKey(row.severity);
+        const process = row.process || {};
+        const cmdline = (process.cmdline || []).join(" ");
+        const intel = row.intel_label
+            ? `<small>Intel: ${escapeHtml(row.intel_label)}</small>`
+            : "";
+
+        html += `
+            <tr>
+                <td class="time">${escapeHtml(formatTime(row.occurred_at))}</td>
+                <td><span class="severity severity-${key}" title="${escapeHtml(row.severity || "Info")}">${escapeHtml(severityLabel(row.severity))}</span></td>
+                <td>${escapeHtml(row.rule || "--")}</td>
+                <td class="finding">
+                    ${escapeHtml(row.summary || "Unknown finding")}
+                    ${row.path ? `<small>${escapeHtml(row.path)}</small>` : ""}
+                    ${intel}
+                </td>
+                <td class="process">
+                    ${process.name ? escapeHtml(process.name) : "<span style='color:#cbd5e1'>unattributed</span>"}
+                    ${row.pid ? `<small>PID ${escapeHtml(row.pid)}</small>` : ""}
+                    ${cmdline ? `<small title="${escapeHtml(cmdline)}">${escapeHtml(cmdline.slice(0, 60))}${cmdline.length > 60 ? "…" : ""}</small>` : ""}
+                </td>
+                <td>${row.report_path ? `<span title="${escapeHtml(row.report_path)}">📄</span>` : "—"}</td>
+            </tr>`;
+    });
+
+    return html + `</tbody></table>`;
+}
+
+function renderTable() {
+    const html = buildTable(state.rows);
+
+    if (html !== state.tableSignature) {
+        state.tableSignature = html;
+        $("tableContainer").innerHTML = html;
+    }
+
+    const first = state.total === 0 ? 0 : state.offset + 1;
+    const last = state.offset + state.rows.length;
+    const pages = Math.max(1, Math.ceil(state.total / PAGE_SIZE));
+    const page = Math.floor(state.offset / PAGE_SIZE) + 1;
+
+    $("showingCount").textContent =
+        `${first}–${last} of ${state.total} finding${state.total === 1 ? "" : "s"}`;
+    $("pageLabel").textContent = `Page ${page} of ${pages}`;
+    $("prevPage").disabled = state.offset === 0;
+    $("nextPage").disabled = state.offset + state.rows.length >= state.total;
+}
+
+/* ------------------------------------------------------------------ */
+/* Latest detection                                                    */
+/* ------------------------------------------------------------------ */
+
+function renderLatest() {
+    const latest = state.latest;
+    const signature = latest ? `${latest.id}` : "none";
+
+    if (signature === state.latestSignature) return;
+    state.latestSignature = signature;
+
+    const content = $("latestContent");
+    const time = $("latestTime");
+
+    if (!latest) {
+        time.textContent = "No findings yet";
+        content.innerHTML = `
+            <div class="alert-icon">ℹ️</div>
+            <div class="latest-text">
+                <strong>No findings recorded.</strong>
+                <span>The detector has not generated an alert yet.</span>
+            </div>`;
+        return;
+    }
+
+    const key = severityKey(latest.severity);
+    const icons = { confirmed: "🚨", critical: "🚨", high: "⚠️", medium: "⚡", info: "ℹ️" };
+
+    time.textContent = formatTime(latest.occurred_at);
+    content.innerHTML = `
+        <div class="alert-icon ${key}">${icons[key] || "ℹ️"}</div>
+        <div class="latest-text">
+            <strong>${escapeHtml(latest.summary || "Unknown finding")}</strong>
+            <span>${escapeHtml(latest.severity || "Info")} • ${escapeHtml(latest.rule || "")}</span>
+        </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Charts                                                              */
+/* ------------------------------------------------------------------ */
+
+function updateEventsChart(buckets) {
+    if (!state.chartsAvailable) return;
+
+    const labels = buckets.map(bucket => bucket.minute.slice(11));
+    const datasets = [
+        { label: "Created", key: "created", color: "#2563eb", fill: true },
+        { label: "Modified", key: "modified", color: "#f59e0b", fill: false },
+        { label: "Deleted", key: "deleted", color: "#dc2626", fill: false },
+        { label: "Moved", key: "moved", color: "#7c3aed", fill: false },
+    ];
+
+    if (state.charts.events) {
+        const chart = state.charts.events;
+        chart.data.labels = labels;
+        chart.data.datasets.forEach((dataset, index) => {
+            dataset.data = buckets.map(bucket => bucket[datasets[index].key] || 0);
+        });
+        chart.update("none");
+        return;
+    }
+
+    state.charts.events = new Chart($("eventsChart"), {
+        type: "line",
+        data: {
+            labels,
+            datasets: datasets.map(dataset => ({
+                label: dataset.label,
+                data: buckets.map(bucket => bucket[dataset.key] || 0),
+                borderColor: dataset.color,
+                backgroundColor: dataset.color + "22",
+                fill: dataset.fill,
+                tension: 0.3,
+                pointRadius: 0,
+                borderWidth: 2,
+            })),
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+                legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } },
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+function updateProcessChart(items) {
+    if (!state.chartsAvailable) return;
+
+    const top = items.slice(0, 6);
+    const labels = top.map(item => item.name || "Unknown");
+    const values = top.map(item => item.findings);
+
+    if (state.charts.processes) {
+        const chart = state.charts.processes;
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = values;
+        chart.update("none");
+        return;
+    }
+
+    state.charts.processes = new Chart($("processChart"), {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Findings",
+                data: values,
+                backgroundColor: "#dc2626",
+                borderRadius: 4,
+            }],
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+                y: { ticks: { font: { size: 10 } } },
+            },
+        },
+    });
+}
+
+function renderHeatmap(data) {
+    const signature = JSON.stringify(data);
+
+    if (signature === state.heatmapSignature) return;
+    state.heatmapSignature = signature;
+
+    const container = $("heatmap");
+
+    if (!data.processes || !data.processes.length) {
+        container.innerHTML =
+            `<div class="message">No attributed process findings yet. ` +
+            `Install Sysmon and run the engine with <code>--attribution sysmon</code>.</div>`;
+        return;
+    }
+
+    const cells = new Map();
+    let maximum = 1;
+
+    (data.cells || []).forEach(cell => {
+        cells.set(`${cell.process_id}|${cell.hour}`, cell.n);
+        if (cell.n > maximum) maximum = cell.n;
+    });
+
+    let html = "<table class='heat'><thead><tr><th>Process</th>";
+
+    data.hours.forEach(hour => {
+        html += `<th>${escapeHtml(hour.slice(11))}</th>`;
+    });
+
+    html += "</tr></thead><tbody>";
+
+    data.processes.forEach(process => {
+        html += `<tr><td class="heat-name" title="${escapeHtml(process.name)}">${escapeHtml(process.name || "Unknown")}</td>`;
+
+        data.hours.forEach(hour => {
+            const count = cells.get(`${process.id}|${hour}`) || 0;
+            const alpha = count ? 0.15 + 0.8 * (count / maximum) : 0;
+
+            html += `<td><span class="heat-cell ${count ? "" : "empty"}" ` +
+                `style="background: rgba(220,38,38,${alpha.toFixed(2)})" ` +
+                `title="${escapeHtml(process.name)} ${escapeHtml(hour)} UTC: ${count} finding(s)">` +
+                `${count || "·"}</span></td>`;
         });
 
+        html += "</tr>";
+    });
 
-        document.getElementById("searchInput").addEventListener("input", event => {
+    container.innerHTML = html + "</tbody></table>";
+}
 
-            searchTerm = event.target.value.trim().toLowerCase();
+async function loadCharts() {
+    if (!state.chartsAvailable) {
+        $("charts").hidden = true;
+        $("chartFallback").hidden = false;
+        return;
+    }
 
-            renderAll();
+    try {
+        const [events, processes, heatmap] = await Promise.all([
+            api("/api/events-per-minute", { minutes: 60 }),
+            api("/api/top-processes", { hours: 24, limit: 6 }),
+            api("/api/process-heatmap", { hours: 12, top: 8 }),
+        ]);
+
+        updateEventsChart(events.buckets || []);
+        updateProcessChart(processes.items || []);
+        renderHeatmap(heatmap);
+    } catch (error) {
+        console.error("Chart data error:", error);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Main refresh                                                        */
+/* ------------------------------------------------------------------ */
+
+async function refresh() {
+    $("refreshButton").disabled = true;
+
+    try {
+        const [findings, stats] = await Promise.all([
+            api("/api/findings", {
+                ...activeFilters(),
+                limit: PAGE_SIZE,
+                offset: state.offset,
+            }),
+            api("/api/stats", { hours: 24 }),
+        ]);
+
+        state.rows = findings.items || [];
+        state.total = findings.total || 0;
+        state.loaded = true;
+
+        applyStats(stats);
+        renderTable();
+        renderLatest();
+
+        hideBanner();
+
+        if (state.engineAlive) {
+            setStatus("ok", state.paused
+                ? "Paused • showing last data"
+                : "Connected • engine live");
+        } else {
+            setStatus("warn", "Connected • engine heartbeat missing");
+        }
+
+        $("lastUpdate").textContent = new Date().toLocaleTimeString();
+
+    } catch (error) {
+        console.error("Dashboard error:", error);
+
+        setStatus("error", "Connection error");
+
+        showBanner(
+            "Unable to load findings (" + error.message + "). " +
+            "Check that dashboard_server.py is running and canary.db is readable.",
+            "error"
+        );
+
+        // Never replace the last good table with an error placeholder.
+        if (!state.loaded) {
+            state.tableSignature = "";
+            $("tableContainer").innerHTML =
+                `<div class="message">No data yet. Waiting for canary.db.</div>`;
+        }
+    } finally {
+        $("refreshButton").disabled = false;
+    }
+
+    loadCharts();
+}
+
+/* ------------------------------------------------------------------ */
+/* Controls                                                            */
+/* ------------------------------------------------------------------ */
+
+document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+        state.severity = chip.dataset.filter;
+        state.offset = 0;
+
+        document.querySelectorAll(".chip").forEach(other => {
+            other.classList.toggle("is-active", other === chip);
         });
 
+        refresh();
+    });
+});
 
-        document.getElementById("pauseButton").addEventListener("click", event => {
+let searchTimer = null;
 
-            paused = !paused;
+$("searchInput").addEventListener("input", event => {
+    clearTimeout(searchTimer);
 
-            event.target.textContent = paused ? "Resume" : "Pause";
-            event.target.setAttribute("aria-pressed", String(paused));
+    searchTimer = setTimeout(() => {
+        state.q = event.target.value.trim();
+        state.offset = 0;
+        refresh();
+    }, 300);
+});
 
-            document.getElementById("refreshMode").textContent =
-                paused ? "Auto-refresh paused" : "Auto-refresh: 3 s";
+$("ruleSelect").addEventListener("change", event => {
+    state.rule = event.target.value;
+    state.offset = 0;
+    refresh();
+});
 
-            setConnectionStatus(
-                true,
-                paused
-                    ? "Paused • showing last data"
-                    : "Connected • live monitoring"
-            );
+$("pauseButton").addEventListener("click", event => {
+    state.paused = !state.paused;
 
-            if (!paused) {
-                loadFindings();
-            }
-        });
+    event.target.textContent = state.paused ? "Resume" : "Pause";
+    event.target.setAttribute("aria-pressed", String(state.paused));
+    $("refreshMode").textContent = state.paused
+        ? "Auto-refresh paused"
+        : "Auto-refresh: 2 s";
 
+    if (!state.paused) {
+        refresh();
+    }
+});
 
-        document.getElementById("refreshButton").addEventListener("click", () => {
-            loadFindings();
-        });
+$("refreshButton").addEventListener("click", refresh);
 
+$("prevPage").addEventListener("click", () => {
+    state.offset = Math.max(0, state.offset - PAGE_SIZE);
+    refresh();
+});
 
-        document.getElementById("exportButton").addEventListener("click", () => {
-            exportCsv();
-        });
+$("nextPage").addEventListener("click", () => {
+    if (state.offset + state.rows.length < state.total) {
+        state.offset += PAGE_SIZE;
+        refresh();
+    }
+});
 
+function exportUrl(format) {
+    const url = new URL("/api/export", window.location.origin);
+    url.searchParams.set("format", format);
 
-        /*
-         * Initial load + 3-second polling.
-         */
+    Object.entries(activeFilters()).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+    });
 
-        loadFindings();
+    return url.toString();
+}
 
-        setInterval(() => {
+$("exportCsv").addEventListener("click", () => {
+    window.location.assign(exportUrl("csv"));
+});
 
-            if (!paused) {
-                loadFindings();
-            }
+$("exportJsonl").addEventListener("click", () => {
+    window.location.assign(exportUrl("jsonl"));
+});
 
-        }, REFRESH_MS);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && !state.paused) {
+        refresh();
+    }
+});
 
-    </script>
+/* ------------------------------------------------------------------ */
+/* Boot                                                                */
+/* ------------------------------------------------------------------ */
+
+if (!state.chartsAvailable) {
+    $("charts").hidden = true;
+    $("chartFallback").hidden = false;
+}
+
+refresh();
+
+setInterval(() => {
+    if (!state.paused && !document.hidden) {
+        refresh();
+    }
+}, REFRESH_MS);
+</script>
 
 </body>
 </html>

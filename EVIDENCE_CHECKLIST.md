@@ -13,6 +13,7 @@ Run everything in the isolated Windows lab VM, inside
 
 - [ ] VirtualBox snapshot `Clean-Before-Ransomware-Test` is available
 - [ ] Sysmon 15 is installed and its service is running (`Sysmon64` / `Sysmon`)
+      — required for automatic process attribution
 - [ ] Python 3.12+ is installed and dependencies are present
       (`pip install -r requirements-dev.txt`)
 - [ ] `C:\RansomwareLab` exists or the environment variables in
@@ -25,7 +26,7 @@ invoked in the VM.
 
 ### 1. Apply the Sysmon configuration
 
-The repository config now contains two FileCreate rules: one for
+The repository config contains two FileCreate rules: one for
 `C:\RansomwareLab\monitored\` and one for `C:\RansomwareLab\testdata\`.
 Conditions inside a single rule are AND-ed, so the two folders must be
 separate `FileCreate` elements.
@@ -61,8 +62,9 @@ python scripts\reset_lab.py --yes --clear-findings
 ```
 
 Expected: `Removed N .locked file(s)`, `Wrote 23 disposable file(s)`,
-`Cleared ...\findings.json`. The folder now holds `_canary_01.txt` …
-`_canary_03.txt` and `file1.txt` … `file20.txt`.
+`Cleared findings in C:\RansomwareLab\canary.db`. The folder now holds
+`_canary_01.txt` … `_canary_03.txt`, `file1.txt` … `file20.txt`, and the
+`.repo-canary-lab` marker required by the simulator.
 
 Capture: `evidence\02-lab-reset.png`.
 
@@ -74,12 +76,13 @@ Covers: FR-1.3 (known, disposable test data).
 python -m pytest
 ```
 
-Expected: all tests pass (`19 passed` with the current suite).
+Expected: all tests pass (`55 passed` with the current suite).
 
 Capture: `evidence\03-pytest.png`.
 
-Covers: verification of the canary, debounce, rate window, cooldown and
-persistence rules.
+Covers: verification of the canary, debounce, rate window, cooldown, SQLite
+persistence, migration, threat intel, attribution parsing, PDF reporting,
+HTTP API and simulator guardrails.
 
 ### 4. Negative control — ordinary activity must stay silent (FR-1.4)
 
@@ -108,13 +111,13 @@ cd C:\RansomwareLab
 python scripts\detection_engine.py
 ```
 
-Expected header: `Watching: ...\testdata`, `Rate threshold: 10 events / 10
-seconds`, `Canaries: _canary_01.txt, _canary_02.txt, _canary_03.txt`, then
-`Status: WATCHING`.
+Expected header: `Watching: ...\testdata`, `Database: ...\canary.db`,
+`Attribution: sysmon`, `Threshold: 10 events / 10 s`, `Canaries:
+_canary_01.txt, _canary_02.txt, _canary_03.txt`, then `Status: WATCHING`.
 
 Capture: `evidence\05-engine-started.png`.
 
-Covers: FR-2.1 (watchdog monitoring is active).
+Covers: FR-2.1 (watchdog monitoring is active), FR-2.5 (attribution source).
 
 ### 6. Start the dashboard
 
@@ -127,8 +130,8 @@ python scripts\dashboard_server.py
 
 Open `http://localhost:8000/index.html`.
 
-Expected: status shows **Connected • live monitoring**, counters are `0`, and
-the table says no findings have been recorded.
+Expected: status shows **Connected • engine live**, counters are `0`, the
+table says no findings match yet, and the events chart is empty.
 
 Capture: `evidence\06-dashboard-idle.png`.
 
@@ -140,12 +143,12 @@ Terminal 3:
 
 ```bat
 cd C:\RansomwareLab
-python simulate_ransomware.py
+python simulate_ransomware.py --yes
 ```
 
 Expected: `Attacking ONLY: ...\testdata`, then `touched _canary_01.txt`,
 `touched _canary_02.txt`, `touched _canary_03.txt`, `touched file1.txt`, …,
-`done`.
+`done (23 file(s))`.
 
 Capture: `evidence\07-simulator-run.png`.
 
@@ -162,33 +165,35 @@ Expected, in this order:
    two or three.
 2. One or more **MASS-CHANGE ALERT** blocks once 10 events fall inside the
    rolling 10-second window.
-3. `WindowEvents=` counts increasing on the plain event lines.
+3. Per-event lines are now debug-level log entries; set
+   `REPO_CANARY_LOG`/`--log-file` and inspect `error_log.txt` if you need them.
 
 Capture: `evidence\08-canary-alert.png` and
 `evidence\09-mass-change-alert.png`.
 
 Covers: FR-2.2, FR-2.3, UC-03.
 
-### 9. Verify persistence and the dashboard
+### 9. Verify persistence, reports and the dashboard
 
 ```bat
-type C:\RansomwareLab\findings.json
+python -c "import sys; sys.path.insert(0,'scripts'); from pathlib import Path; from database import FindingsDB; db=FindingsDB(Path(r'C:\RansomwareLab\canary.db')); rows=db.list_findings(limit=50); print(len(rows), 'findings'); [print(r['occurred_at'], r['severity'], r['rule'], r['summary']) for r in rows]"
+dir C:\RansomwareLab\reports
 ```
-
-Open the dashboard again (it refreshes every 3 seconds).
 
 Expected:
 
-- `findings.json` is a valid JSON list with `time`, `summary`, `severity`.
-- Exactly three Critical entries, one per canary file.
-- At least one High entry: `Mass-change detected: 10 events in 10 seconds`.
-- The dashboard shows the same rows, the latest detection card, the filter
-  counts, and a recent last-update time.
+- Four or more rows in `canary.db`: exactly three `Critical` canary findings
+  plus at least one `High` mass-change finding.
+- Each row has a UTC timestamp, a rule, and a report path.
+- `reports\` contains one PDF per alert (subject to the 12/minute throttle).
+- The dashboard shows the same rows, the charts, the latest detection card,
+  the filter counts, and a recent last-update time.
+- **Findings are not capped at 50** any more; the table paginates 25 rows at a
+  time and the API accepts `offset`.
 
-Capture: `evidence\10-findings-json.png`,
-`evidence\11-dashboard-live.png`.
+Capture: `evidence\10-database.png`, `evidence\11-dashboard-live.png`.
 
-Covers: FR-3.1 (persistence + 50-entry cap), FR-3.3 (3-second refresh),
+Covers: FR-3.1 (SQLite persistence), FR-3.3 (2-second refresh),
 FR-3.4 (status/last update), UC-04.
 
 ### 10. Capture the Sysmon Event ID 11 evidence
@@ -209,7 +214,14 @@ Capture: `evidence\12-sysmon-event11.png` (open the event's **Details** tab so
 
 Covers: FR-2.4, UC-05. Record the PID for the next step.
 
-### 11. Attribute the PID with psutil
+### 11. Confirm process attribution
+
+Open the dashboard row for a canary finding. Expected: the Process column
+shows `python.exe` (or the simulator's image), the PID, and a truncated
+command line, because the engine correlated Sysmon Event ID 11 automatically
+(`attribution_method='sysmon'`).
+
+The manual lookup is still available for cross-checking:
 
 ```bat
 cd C:\RansomwareLab
@@ -221,11 +233,22 @@ Expected: PID, name (`python.exe`), executable path, command line
 
 Capture: `evidence\13-process-attribution.png`.
 
-Covers: FR-2.5, UC-05. If the simulator has already exited, run it again or
-attribute the engine's PID (`detection_engine.py`) instead; note which one
-you used in the run record below.
+Covers: FR-2.5, UC-05. If the simulator has already exited, the engine records
+`attribution_method='none'` and no process rather than guessing.
 
-### 12. Record the run and clean up
+### 12. Open a PDF incident report
+
+Open one of the files in `C:\RansomwareLab\reports`.
+
+Expected: an `INC-00000N-...pdf` containing the report ID, UTC detection
+time, severity, rule, summary, file path, SHA-256, process attribution and
+engine version.
+
+Capture: `evidence\14-incident-report.png`.
+
+Covers: the reporting/response extension of FR-3.
+
+### 13. Record the run and clean up
 
 - [ ] Stop the engine and dashboard with `CTRL+C`.
 - [ ] Reset the lab data: `python scripts\reset_lab.py --yes --clear-findings`
@@ -243,10 +266,11 @@ you used in the run record below.
 | Mass-change findings | At least 1 High: `Mass-change detected: 10 events in 10 seconds` |
 | Duplicate canary rows | None (debounce runs before the canary rule) |
 | Negative control | 0 alerts, exit code 0 |
-| `findings.json` | Valid JSON list, newest last, at most 50 entries |
-| Dashboard | Connected, rows visible within ~3 s, counters match the file |
+| `canary.db` | Three Critical + at least one High, UTC timestamps, unique dedupe keys |
+| PDF reports | One per alert in `reports\`, throttled to 12/minute |
+| Dashboard | Connected, rows within ~2 s, charts and heartbeat status visible |
 | Sysmon | Event ID 11 with `ProcessId` and `TargetFilename` in `testdata` |
-| Process attribution | PID resolves to `python.exe` / simulator command line |
+| Process attribution | Automatic via Sysmon; `none` (never a guess) when unavailable |
 
 > The mass-change summary reports the number of events in the window at the
 > moment the alert fires; the first alert is always `10 events`.
@@ -262,8 +286,8 @@ you used in the run record below.
 | FR-2.2 canary alert | 8, 9 |
 | FR-2.3 mass-change alert + cooldown | 8, 9 |
 | FR-2.4 Sysmon Event ID 11 | 1, 10 |
-| FR-2.5 psutil process attribution | 11 |
-| FR-3.1 findings.json persistence | 9 |
+| FR-2.5 process attribution | 11 |
+| FR-3.1 SQLite persistence | 9 |
 | FR-3.2 local HTTP server | 6 |
 | FR-3.3 dashboard refresh | 9 |
 | FR-3.4 connection status / last update | 6, 9 |
@@ -282,10 +306,12 @@ Fill this in for the demo run that produced the screenshots.
 | Python version | |
 | watchdog version | |
 | psutil version | |
+| fpdf2 version | |
 | Sysmon version | |
 | Engine PID | |
 | Simulator PID (Sysmon `ProcessId`) | |
-| Findings: Critical / High | |
+| Findings: Confirmed / Critical / High | |
+| PDF reports generated | |
 | Negative control result (PASS/FAIL) | |
 | pytest result | |
 | Notes | |
@@ -296,10 +322,12 @@ Fill this in for the demo run that produced the screenshots.
 
 | Symptom | Check |
 |---|---|
-| Dashboard shows `Connection error` | Run `scripts/dashboard_server.py`, or serve `index.html` from the folder that contains `findings.json`; confirm the `--findings` path |
+| Dashboard shows `Connection error` | Run `scripts/dashboard_server.py` and pass the same `--db-path` the engine uses; confirm `canary.db` is readable |
+| `engine heartbeat missing` | The engine is stopped or crashed; check `error_log.txt` and restart it |
 | No Sysmon Event ID 11 | Sysmon service running; config applied with `Sysmon64.exe -c`; the target path is exactly `C:\RansomwareLab\testdata\` (trailing backslash matters) |
+| Process column says `unattributed` | Sysmon is not installed or the channel is unreadable; run the engine with `--attribution sysmon` and check `error_log.txt` |
 | No canary alert | Engine is watching `testdata`, canary names are `_canary_01.txt` … `_canary_03.txt`, and `reset_lab.py` was run |
-| Duplicate canary rows | You are running the old engine; use the current `scripts/detection_engine.py` (debounce runs first) |
-| `UnicodeEncodeError` on print | Fixed in the current engine; run from the repository, not an old copy |
-| Simulator does nothing | All files already end in `.locked`; run `reset_lab.py --yes` first |
-| Findings path is wrong | Override with `--test-dir` / `--findings` or `REPO_CANARY_TEST_DIR` / `REPO_CANARY_FINDINGS` |
+| Duplicate canary rows | Check for a second engine instance writing to the same DB; dedupe keys make the same event idempotent, not repeated events |
+| No PDF report | `--no-reports` set, fpdf2 missing, or the throttle coalesced duplicates for the same rule+path |
+| Simulator refuses to run | The target folder lacks the `.repo-canary-lab` marker; run `reset_lab.py --yes` |
+| Findings path is wrong | Override with `--db-path` or `REPO_CANARY_DB`; `--findings` is deprecated and maps to `<name>.db` |

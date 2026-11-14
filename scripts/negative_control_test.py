@@ -1,25 +1,28 @@
 """FR-1.4 negative control: ordinary file activity must produce no alert.
 
 The SRS requires evidence that normal work in the monitored folder stays
-silent (SRS section 5.4). This script creates a throw-away lab folder,
-starts the real detection engine against it, performs seven ordinary file
-operations (below the 10-events-in-10-seconds threshold and never touching
-a canary), and then checks that findings.json is empty.
+silent. This script creates a throw-away lab folder, starts the real detection
+engine against it with its own SQLite database, performs ordinary file
+operations (below the 10-events-in-10-seconds threshold and never touching a
+canary), and then checks that no finding was stored.
 
 Exit code 0 = PASS (no alert), 1 = FAIL (an alert was raised).
 
 Usage
 -----
-    py -3.12 negative_control_test.py
+    python scripts/negative_control_test.py
 """
 
-import json
 import subprocess
 import sys
 import tempfile
 import threading
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from database import FindingsDB  # noqa: E402
 
 ENGINE = Path(__file__).with_name("detection_engine.py")
 
@@ -48,7 +51,7 @@ def wait_for_engine(process, lines, timeout=15.0):
 
 
 def run_normal_activity(folder: Path) -> None:
-    """Seven normalised events: 3 creates, 1 append, 2 rename, 1 delete."""
+    """Seven normalised events: 3 creates, 1 append, 1 rename, 1 delete."""
 
     for name in ("normal_a.txt", "normal_b.txt", "normal_c.txt"):
         (folder / name).write_text(
@@ -79,11 +82,12 @@ def run_normal_activity(folder: Path) -> None:
 
 
 def main() -> int:
-
     with tempfile.TemporaryDirectory(prefix="repo-canary-negative-") as temp:
         folder = Path(temp) / "testdata"
         folder.mkdir()
-        findings_file = Path(temp) / "findings.json"
+
+        database = Path(temp) / "canary.db"
+        log_file = Path(temp) / "error_log.txt"
 
         command = [
             sys.executable,
@@ -91,8 +95,13 @@ def main() -> int:
             str(ENGINE),
             "--test-dir",
             str(folder),
-            "--findings",
-            str(findings_file),
+            "--db-path",
+            str(database),
+            "--hash-file",
+            str(Path(temp) / "known_hashes.txt"),
+            "--log-file",
+            str(log_file),
+            "--no-reports",
         ]
 
         print("[+] Starting detection engine on a disposable folder...")
@@ -139,19 +148,16 @@ def main() -> int:
 
         alerts = []
 
-        if findings_file.exists():
-            try:
-                alerts = json.loads(
-                    findings_file.read_text(encoding="utf-8")
-                )
-            except json.JSONDecodeError:
-                alerts = [{"summary": "<findings.json was not valid JSON>"}]
+        if database.exists():
+            db = FindingsDB(database)
+            db.initialize()
+            alerts = db.list_findings(limit=100)
 
         print()
         print("=" * 65)
         print("NEGATIVE CONTROL RESULT (FR-1.4)")
         print("=" * 65)
-        print("Activity:   3 creates, 1 append, 1 rename (2 events), 1 delete")
+        print("Activity:   3 creates, 1 append, 1 rename, 1 delete")
         print("Expectation: no alert")
         print(f"Alerts:     {len(alerts)}")
 

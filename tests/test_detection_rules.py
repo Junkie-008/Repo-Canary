@@ -142,6 +142,40 @@ def test_debounce_is_per_file():
     assert second.event_count == 2
 
 
+def test_rename_counts_as_one_window_event():
+    """A rename emits MOVED + MOVED_TO; only the source may count."""
+
+    detector = rules(rate_threshold=2)
+
+    source = detector.process_event("MOVED", r"C:\lab\testdata\old.txt", now=TRIGGER)
+    destination = detector.process_event(
+        "MOVED_TO",
+        r"C:\lab\testdata\new.txt",
+        now=TRIGGER + 0.001,
+        count_event=False,
+    )
+
+    assert source.accepted and destination.accepted
+    assert detector.event_count == 1
+    assert destination.alerts == ()
+
+
+def test_rename_destination_still_triggers_canary():
+    detector = rules()
+
+    detector.process_event("MOVED", r"C:\lab\testdata\plain.txt", now=TRIGGER)
+
+    result = detector.process_event(
+        "MOVED_TO",
+        r"C:\lab\testdata\_canary_01.txt",
+        now=TRIGGER + 0.001,
+        count_event=False,
+    )
+
+    assert [alert.rule for alert in result.alerts] == ["canary"]
+    assert detector.event_count == 1
+
+
 def test_directory_events_are_ignored(tmp_path: Path):
     detector = rules()
 
