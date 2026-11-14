@@ -23,6 +23,11 @@ DEFAULT_LAB_ROOT = r"C:\RansomwareLab"
 
 LAB_MARKER = ".repo-canary-lab"
 
+# Canonical canary content. reset_lab writes these exact bytes and the
+# integrity baseline hashes this same constant, so a fresh lab and its
+# baseline cannot drift.
+CANARY_TEXT = "This is a canary file. Ordinary work must never touch it.\n"
+
 
 def _path(env_var, default):
     return Path(os.environ.get(env_var, default)).expanduser()

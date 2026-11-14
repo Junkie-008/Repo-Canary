@@ -30,6 +30,11 @@ from watchdog.observers import Observer
 
 import lab_config
 from attribution import build_attributor
+from canary_integrity import (
+    CanaryIntegrityMonitor,
+    CanaryProblem,
+    seed_entries_for,
+)
 from database import FindingsDB, utc_minute, utc_now
 from detection_rules import (
     CANARY_FILES,
@@ -279,6 +284,7 @@ class RansomwareDetector(FileSystemEventHandler):
         self.db = db
         self.enricher = enricher
         self.counters = counters
+        self.integrity_monitor: CanaryIntegrityMonitor | None = None
 
     # --------------------------------------------------------
     # Alerts
@@ -304,7 +310,7 @@ class RansomwareDetector(FileSystemEventHandler):
 
         print("=" * 65)
 
-    def persist_alert(self, alert: Alert) -> None:
+    def persist_alert(self, alert: Alert, *, note_live: bool = True) -> None:
         record = FindingRecord(
             occurred_at=alert.time,
             summary=alert.summary,
@@ -314,6 +320,13 @@ class RansomwareDetector(FileSystemEventHandler):
             path=alert.path,
             event_type=alert.event_type,
         )
+
+        if (
+            note_live
+            and self.integrity_monitor is not None
+            and alert.rule == "canary"
+        ):
+            self.integrity_monitor.note_live_alert(alert.path)
 
         finding_id, inserted = self.db.insert_finding(record)
 
@@ -326,6 +339,22 @@ class RansomwareDetector(FileSystemEventHandler):
             )
         else:
             logger.debug("Duplicate finding ignored: %s", alert.summary)
+
+    def handle_integrity_problem(self, problem: CanaryProblem) -> None:
+        """Persist a startup or periodic baseline failure as a canary alert."""
+
+        alert = Alert(
+            time=utc_now(),
+            severity="Critical",
+            summary=problem.summary,
+            event_type=problem.event_type,
+            path=problem.path,
+            rule="canary",
+            occurred_epoch=time.time(),
+        )
+
+        self.print_alert(alert)
+        self.persist_alert(alert, note_live=False)
 
     # --------------------------------------------------------
     # Event entry point
@@ -467,6 +496,14 @@ def parse_args(argv=None):
     )
 
     parser.add_argument(
+        "--integrity-interval",
+        type=float,
+        default=300.0,
+        help="seconds between canary integrity scans; 0 runs the startup scan only "
+        "(default: 300)",
+    )
+
+    parser.add_argument(
         "--log-file",
         default=str(lab_config.ERROR_LOG),
         help=f"error log path (default: {lab_config.ERROR_LOG})",
@@ -479,6 +516,28 @@ def parse_args(argv=None):
     )
 
     return parser.parse_args(argv)
+
+
+def load_canary_baseline(db: FindingsDB, test_dir: Path) -> dict[str, dict]:
+    """Load the stored canary baseline, seeding missing rows safely."""
+
+    baseline = db.canary_baseline()
+    missing = [name for name in sorted(CANARY_FILES) if name not in baseline]
+
+    if not missing:
+        return baseline
+
+    # Databases created before the baseline table, or a partial baseline, are
+    # seeded only when the file is byte-for-byte the canonical canary: an
+    # upgrade must not bless a canary that was tampered with while stopped.
+    db.upsert_canary_baseline(seed_entries_for(test_dir, missing))
+    logger.warning(
+        "Canary baseline missing for %s; seeded from the canonical content. "
+        "Run scripts/reset_lab.py --yes to capture a fresh baseline.",
+        ", ".join(missing),
+    )
+
+    return db.canary_baseline()
 
 
 def resolve_paths(args) -> tuple[Path, Path]:
@@ -524,6 +583,7 @@ def main(argv=None) -> int:
     try:
         db.initialize()
         migrated = db.migrate_legacy_json(legacy_json)
+        baseline = load_canary_baseline(db, monitored_dir)
     except Exception:  # noqa: BLE001 - configuration errors should be readable
         logger.exception("Could not initialise the database at %s", db_path)
         return 1
@@ -549,6 +609,13 @@ def main(argv=None) -> int:
     enricher = EnrichmentWorker(db, attributor, intel, reporter)
     counters = EventCounters(db)
     detector = RansomwareDetector(db, enricher, counters)
+    monitor = CanaryIntegrityMonitor(
+        monitored_dir,
+        db.canary_baseline,
+        detector.handle_integrity_problem,
+        interval=args.integrity_interval,
+    )
+    detector.integrity_monitor = monitor
 
     reporter.start()
     enricher.start()
@@ -578,9 +645,18 @@ def main(argv=None) -> int:
             except (OSError, ValueError):
                 pass
 
+    # Verify the stored baseline before watchdog starts, so a canary changed
+    # while the engine was stopped is reported immediately on boot.
+    try:
+        startup_problems = monitor.scan(event_type="startup_scan", force=True)
+    except Exception:  # noqa: BLE001 - keep watching even if the scan fails
+        logger.exception("Startup canary integrity scan failed")
+        startup_problems = []
+
     observer = Observer()
     observer.schedule(detector, str(monitored_dir), recursive=True)
     observer.start()
+    monitor.start()
 
     print("=" * 65)
     print("        RANSOMWARE 207 - DETECTION ENGINE")
@@ -595,6 +671,12 @@ def main(argv=None) -> int:
         f"(debounce {DEBOUNCE_SECONDS} s)"
     )
     print(f"Canaries:    {', '.join(sorted(CANARY_FILES))}")
+    print(f"Baseline:    {len(baseline)} stored; startup scan {len(startup_problems)} problem(s)")
+    print(
+        "Integrity:   every %ds" % args.integrity_interval
+        if args.integrity_interval > 0
+        else "Integrity:   startup scan only"
+    )
     if migrated:
         print(f"Migrated:    {migrated} legacy findings")
     print("Status: WATCHING")
@@ -630,6 +712,7 @@ def main(argv=None) -> int:
         observer.join(timeout=10.0)
 
         stop.set()
+        monitor.stop()
         counters.stop()
         enricher.stop()
         reporter.stop()

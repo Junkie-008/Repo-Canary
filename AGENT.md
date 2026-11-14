@@ -44,15 +44,18 @@ triage hook was added.
 
 ## Schema
 
-Approved shape, implemented in `scripts/database.py` (`SCHEMA_SQL`):
-`schema_meta`, `processes`, `known_hashes`, `findings`, `event_counters`,
-`engine_state`, with indexes on time, severity, rule, process, SHA-256 and
-severity rank.
+Approved shape, implemented in `scripts/database.py` (`SCHEMA_SQL`, now
+`schema_version = 3`): `schema_meta`, `processes`, `known_hashes`,
+`canary_baseline`, `findings`, `event_counters`, `engine_state`, with indexes
+on time, severity, rule, process, SHA-256 and severity rank. Version 3 adds
+`canary_baseline`; initialization is additive, so a version-2 database gains
+the table and the version row on the next start.
 
 ## Files
 
 Created:
 
+- `scripts/canary_integrity.py` — persisted baseline capture, capped scanning, startup/periodic monitor
 - `scripts/models.py` — severity ranks, `ProcessDetails`, `IntelResult`, `FindingRecord`, dedupe key
 - `scripts/database.py` — schema, connection/WAL, dedupe insert, enrichment, queries, migration, counters, heartbeat
 - `scripts/attribution.py` — Sysmon XML parsing/correlation, psutil enrichment, honest null attributor
@@ -63,7 +66,8 @@ Created:
 - `vendor/chart.umd.min.js` (Chart.js 4.4.7, 205 KB, vendored for offline use)
 - `known_hashes.example.txt`
 - `tests/test_database.py`, `tests/test_threat_intel.py`, `tests/test_attribution.py`,
-  `tests/test_reporting.py`, `tests/test_dashboard_api.py`, `tests/test_lab_guardrails.py`
+  `tests/test_reporting.py`, `tests/test_dashboard_api.py`, `tests/test_lab_guardrails.py`,
+  `tests/test_canary_integrity.py`
 - `AGENT.md` (this file)
 
 Rewritten:
@@ -71,7 +75,7 @@ Rewritten:
 - `scripts/detection_engine.py` — SQLite writes, async enrichment, heartbeat, counter flush, signal handling, loud observer failure, rename single-count
 - `scripts/dashboard_server.py` — paginated API, stats, charts data, CSV/JSONL export, whitelisted static serving, health endpoint
 - `index.html` — Chart.js line chart, process bars, heatmap, pagination, JSONL export, engine heartbeat status
-- `scripts/reset_lab.py` — marker, DB clearing, `--db-path`
+- `scripts/reset_lab.py` — marker, DB clearing, `--db-path`, canary baseline capture
 - `simulate_ransomware.py` — marker guard, dry-run, `.txt` allowlist, size cap, symlink skip, confirmation
 - `scripts/negative_control_test.py` — now reads SQLite (the old script silently read the removed JSON file and could pass vacuously)
 - `tests/test_detection_rules.py` — rename single-count and destination-canary tests
@@ -92,7 +96,8 @@ Removed:
 | 5. Dashboard UI (Chart.js) | Done | Charts, heatmap, pagination, CSV/JSONL |
 | 6. Docker packaging | Done | Multi-stage, non-root, compose volume + healthcheck; image built and the compose stack run end to end, 65/65 stack checks |
 | 7. Simulator + reset guardrails | Done | Marker guard, dry run, allowlist |
-| 8. Tests + verification | Done | 57 tests; negative control PASS; end-to-end run; live Sysmon attribution |
+| 8. Tests + verification | Done | 67 tests; negative control PASS; end-to-end run; live Sysmon attribution |
+| 9. Canary integrity continuity | Done | Persisted baseline, startup scan, periodic scans, duplicate suppression |
 
 ## Verification log
 
@@ -330,6 +335,31 @@ the PDFs/images declared binary). Verified afterwards: a fresh clone reports
 the rebuilt stack comes up healthily — so the demo is reproducible from the
 repository alone.
 
+### Canary integrity continuity (2026-11-15)
+
+Added `scripts/canary_integrity.py`, the `canary_baseline` table, baseline
+capture in `reset_lab.py`, and the engine's startup/periodic scans.
+
+- `python -m pytest -q` → **67 passed** (10 new tests for baseline capture,
+  scan kinds, seeding, monitor transitions/suppression and schema upgrade).
+- End-to-end restart test (real engine, `--attribution none --no-reports
+  --integrity-interval 1`): a canary modified while the engine was stopped
+  produced **exactly one** `Critical` `canary` finding, event type
+  `startup_scan`, summary `Canary file modified during the startup integrity
+  scan: ...`; six seconds of periodic scans produced **no** duplicate.
+- Healthy lab: startup plus periodic scans produced **0** findings.
+- Live tamper: watchdog produced one `MODIFIED` canary finding and the scan did
+  **not** duplicate it.
+- `reset_lab.py` now writes canary bytes (LF on every platform) and stores the
+  matching SHA-256/size/mtime baseline; clearing findings leaves the baseline
+  intact.
+
+Bug found during implementation: `write_text` had been writing CRLF canary
+files on Windows while the canonical constant is LF, so a canonical seed would
+have flagged every legacy lab. Canaries are now written as bytes, and seeding
+accepts only the exact canonical LF or legacy CRLF bytes — any other content
+still produces a `modified` finding.
+
 ## Bugs found and fixed during implementation
 
 - `ThreatIntel.check` deadlocked on its own non-reentrant lock when the cache
@@ -342,6 +372,9 @@ repository alone.
   passed without checking anything after the migration; rewritten against SQLite.
 - Rename events incremented the event counter twice; counters now increment only
   for the source event (mass-change was already fixed).
+- Canary files were written with `write_text`, which is CRLF on Windows while
+  the canonical baseline is LF; `reset_lab` now writes bytes and seeding
+  accepts only the canonical LF/legacy CRLF forms.
 
 ## Known limitations / follow-ups
 
@@ -351,6 +384,11 @@ repository alone.
   `docs/build_docs.py` from `docs_content.py`, so they can be
   regenerated after any further change. The old `.docx` files (01, 07, 12) were
   not regenerated and are now stale relative to the PDFs.
+- The integrity scan covers the three canary files only; mass-change events
+  that occur while the engine is stopped cannot be reconstructed from the
+  filesystem. The baseline lives in the same SQLite database, so a local
+  administrator who can rewrite `canary.db` can also rewrite the baseline;
+  protecting the database is part of the host security model.
 - Dashboard has no authentication/TLS; keep it on `127.0.0.1`.
 - Attribution depends on Sysmon Event ID 11 and on the engine account being
   able to read `Microsoft-Windows-Sysmon/Operational` (elevated, or a member of

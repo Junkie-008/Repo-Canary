@@ -7,7 +7,8 @@ incident reports.
 The project watches a disposable folder, raises a **Critical** alert when a
 canary file is touched, a **High** alert on mass file change, and a
 **Confirmed Ransomware** alert when a touched file matches the local SHA-256
-feed. A harmless simulator produces ransomware-like activity so the whole flow
+feed. A persisted SHA-256 baseline is checked at startup and on an interval,
+so a canary changed while the engine was stopped is still reported. A harmless simulator produces ransomware-like activity so the whole flow
 can be demonstrated without any real malware.
 
 Everything runs locally. The simulator only touches the marked lab folder, and
@@ -21,6 +22,7 @@ the test data is disposable.
 |---|---|
 | `scripts/detection_engine.py` | Watches the test folder with `watchdog`, persists findings, runs enrichment |
 | `scripts/detection_rules.py` | Pure canary / mass-change / debounce / cooldown rules (no I/O) |
+| `scripts/canary_integrity.py` | Persisted canary baseline, startup/periodic integrity scans |
 | `scripts/database.py` | SQLite schema, dedupe inserts, queries, migration, counters, heartbeat |
 | `scripts/models.py` | Shared severity ranks, process details and `FindingRecord` |
 | `scripts/attribution.py` | Sysmon Event ID 11 → `psutil` process attribution (or honest `none`) |
@@ -169,6 +171,23 @@ fixed by the rule that fires, and hash matches upgrade the row to
 A rename now counts as **one** mass-change event: the source is counted and the
 destination is still canary-checked.
 
+### Detection continuity
+
+watchdog only reports events while the engine is running. To cover restarts and
+missed events, `reset_lab.py` stores a SHA-256/size/mtime baseline for the three
+canaries in the `canary_baseline` table. The engine verifies that baseline once
+before it starts watching and then every `--integrity-interval` seconds
+(default 300; `0` keeps startup only). A missing, modified, timestamp-touched,
+oversized or replaced canary produces a **Critical** `canary` finding with
+event type `startup_scan` or `integrity_scan`; a live watchdog alert for the
+same canary suppresses the duplicate scan finding. If an existing database has
+no baseline, rows are seeded only when the file is byte-for-byte the canonical
+canary, so an upgrade cannot bless a tampered file.
+
+```bash
+python scripts/detection_engine.py --integrity-interval 60
+```
+
 ### Process attribution
 
 `watchdog` reports a path, not a PID, and `psutil` cannot attribute a write to
@@ -194,6 +213,7 @@ python scripts/detection_engine.py --attribution none     # disable
   `processes`
 - `processes` — normalised process dimension reused across findings
 - `known_hashes` — mirror of the local SHA-256 feed
+- `canary_baseline` — expected canary SHA-256, size, mtime and capture time
 - `event_counters` — buffered per-minute event volume for the chart
 - `engine_state` — single-row heartbeat used by `/api/health`
 - `schema_meta` — schema version and migration flags
@@ -251,8 +271,8 @@ The image is multi-stage, runs as a non-root user, and initialises
 ## Verification
 
 ```bash
-# 55 unit/integration tests: rules, SQLite, migration, intel, attribution,
-# reporting, HTTP API and simulator guardrails
+# 67 unit/integration tests: rules, SQLite, migration, intel, attribution,
+# reporting, integrity scans, HTTP API and simulator guardrails
 python -m pytest
 
 # FR-1.4 negative control: ordinary activity must produce no alert

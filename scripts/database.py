@@ -36,6 +36,9 @@ TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 LEGACY_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 MINUTE_LENGTH = 16  # len("YYYY-MM-DDTHH:MM")
 
+# 2: SQLite store. 3: canary_baseline (additive, created by the schema script).
+SCHEMA_VERSION = 3
+
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
@@ -58,6 +61,14 @@ CREATE TABLE IF NOT EXISTS known_hashes (
     label    TEXT NOT NULL,
     source   TEXT,
     added_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS canary_baseline (
+    name        TEXT PRIMARY KEY,
+    sha256      TEXT NOT NULL CHECK (length(sha256) = 64),
+    size        INTEGER NOT NULL,
+    mtime_ns    INTEGER,
+    captured_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS findings (
@@ -162,7 +173,15 @@ class FindingsDB:
             conn.executescript(SCHEMA_SQL)
             conn.execute(
                 "INSERT OR IGNORE INTO schema_meta(key, value) "
-                "VALUES ('schema_version', '2')"
+                "VALUES ('schema_version', ?)",
+                (str(SCHEMA_VERSION),),
+            )
+            # Additive upgrades need no ALTER TABLE; future column changes must
+            # add an explicit migration step here before bumping the version.
+            conn.execute(
+                "UPDATE schema_meta SET value = ? WHERE key = 'schema_version' "
+                "AND CAST(value AS INTEGER) < ?",
+                (str(SCHEMA_VERSION), SCHEMA_VERSION),
             )
 
     @contextmanager
@@ -386,6 +405,64 @@ class FindingsDB:
                 "VALUES (?, ?, ?, ?)",
                 [(sha, label, source, now) for sha, label, source in entries],
             )
+
+    @staticmethod
+    def _baseline_rows(entries: Iterable[dict]) -> list[tuple]:
+        now = utc_now()
+        rows = []
+
+        for entry in entries:
+            rows.append(
+                (
+                    entry["name"],
+                    entry["sha256"],
+                    int(entry["size"]),
+                    entry.get("mtime_ns"),
+                    entry.get("captured_at") or now,
+                )
+            )
+
+        return rows
+
+    def replace_canary_baseline(self, entries: Iterable[dict]) -> None:
+        """Replace every canary baseline row in one transaction."""
+
+        rows = self._baseline_rows(entries)
+
+        with self.connection(write=True) as conn:
+            conn.execute("DELETE FROM canary_baseline")
+            conn.executemany(
+                "INSERT INTO canary_baseline(name, sha256, size, mtime_ns, captured_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                rows,
+            )
+
+    def upsert_canary_baseline(self, entries: Iterable[dict]) -> None:
+        """Insert baseline rows, refreshing any that already exist."""
+
+        rows = self._baseline_rows(entries)
+
+        with self.connection(write=True) as conn:
+            conn.executemany(
+                """
+                INSERT INTO canary_baseline(name, sha256, size, mtime_ns, captured_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(name) DO UPDATE SET
+                    sha256      = excluded.sha256,
+                    size        = excluded.size,
+                    mtime_ns    = excluded.mtime_ns,
+                    captured_at = excluded.captured_at
+                """,
+                rows,
+            )
+
+    def canary_baseline(self) -> dict[str, dict]:
+        """Return the persisted baseline keyed by canary filename."""
+
+        with self.connection() as conn:
+            rows = conn.execute("SELECT * FROM canary_baseline").fetchall()
+
+        return {row["name"]: dict(row) for row in rows}
 
     # ------------------------------------------------------------------
     # Reads
