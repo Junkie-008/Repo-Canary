@@ -226,3 +226,6 @@ canary.db
 canary.db-*
 error_log.txt
 reports/
+
+# Documentation build output (the committed PDFs are the deliverables)
+docs/build/

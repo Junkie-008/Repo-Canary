@@ -232,6 +232,35 @@ Operational requirements confirmed: the engine account needs read access to
 `Microsoft-Windows-Sysmon/Operational` (elevated or Event Log Readers), and the
 Sysmon config must include the watched folder (`C:\RansomwareLab\testdata\`).
 
+### CI pipeline (2026-11-14)
+
+`.github/workflows/ci.yml` runs two jobs on every push, pull request and manual
+dispatch. Both use `windows-latest`: the product is Windows-first (Sysmon,
+`wevtutil`, drive letters) and the documents are set in the Windows faces.
+
+- `tests` — Python 3.12 and 3.13, `pip install -r requirements-dev.txt`, then
+  `pytest -q`.
+- `docs` — `pip install -r docs/requirements-docs.txt`, then
+  `python docs/build_docs.py --out docs/build` followed by
+  `python docs/check_docs.py docs/build`; the twelve PDFs and the deck are
+  uploaded as the `project-documentation` artifact.
+
+`docs/check_docs.py` fails the build on a missing document, a PDF under three
+pages, any page with fewer than 120 characters of extractable text (the
+near-blank-page bug found during the rebuild), a deck that is not 960x540 pt,
+slides that disagree with the PDF page count, or a missing Markdown source.
+
+Verified from a clean `git clone` in a fresh virtual environment, not from the
+working tree:
+
+- Python 3.13: `57 passed`; docs build and check → `documentation set OK`.
+- Python 3.12: `57 passed`; docs build and check → `documentation set OK`.
+- The clone's rebuild is text-identical to the committed PDFs page for page
+  (bytes differ only by fpdf2's creation timestamp), so the committed
+  deliverables are what CI produces.
+- `docs/check_docs.py` against an empty directory exits 1 with 17 problems, so
+  the gate is not vacuous.
+
 ## Bugs found and fixed during implementation
 
 - `ThreatIntel.check` deadlocked on its own non-reentrant lock when the cache
@@ -247,10 +276,10 @@ Sysmon config must include the watched folder (`C:\RansomwareLab\testdata\`).
 
 ## Known limitations / follow-ups
 
-- `Project_Documentation/` was regenerated on 2026-11-14 (version 3.0): all
+- `docs/` was regenerated on 2026-11-14 (version 3.0): all
   twelve PDFs plus the deck and four Markdown sources now describe SQLite,
   Sysmon attribution and the 57-test suite. They are built by
-  `Project_Documentation/build_docs.py` from `docs_content.py`, so they can be
+  `docs/build_docs.py` from `docs_content.py`, so they can be
   regenerated after any further change. The old `.docx` files (01, 07, 12) were
   not regenerated and are now stale relative to the PDFs.
 - Dashboard has no authentication/TLS; keep it on `127.0.0.1`.

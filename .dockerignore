@@ -16,4 +16,4 @@ reports
 canary.db
 canary.db-*
 *.pdf
-Project_Documentation
+docs
