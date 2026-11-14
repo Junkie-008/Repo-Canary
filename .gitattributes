@@ -1,0 +1,16 @@
+# Normalise line endings so a Windows checkout cannot break the Linux image.
+# docker/entrypoint.sh must stay LF or the container cannot exec it.
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Never let Git touch these
+*.pdf binary
+*.png binary
+*.docx binary
+*.pptx binary
