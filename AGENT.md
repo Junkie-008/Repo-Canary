@@ -234,16 +234,26 @@ Sysmon config must include the watched folder (`C:\RansomwareLab\testdata\`).
 
 ### CI pipeline (2026-11-14)
 
-`.github/workflows/ci.yml` runs two jobs on every push, pull request and manual
-dispatch. Both use `windows-latest`: the product is Windows-first (Sysmon,
-`wevtutil`, drive letters) and the documents are set in the Windows faces.
+`.github/workflows/ci.yml` runs three jobs on every push, pull request and
+manual dispatch.
 
 - `tests` — Python 3.12 and 3.13, `pip install -r requirements-dev.txt`, then
-  `pytest -q`.
+  `pytest -q`. Runs on `windows-latest`.
 - `docs` — `pip install -r docs/requirements-docs.txt`, then
   `python docs/build_docs.py --out docs/build` followed by
   `python docs/check_docs.py docs/build`; the twelve PDFs and the deck are
-  uploaded as the `project-documentation` artifact.
+  uploaded as the `project-documentation` artifact. Runs on `windows-latest`:
+  the documents are set in the Windows faces.
+- `container` — `docker compose up -d --build`, wait for the dashboard
+  healthcheck, copy `simulate_ransomware.py` into the engine and run the drill,
+  then `tests/ci_container_smoke.py`. Runs on `ubuntu-latest` because the image
+  is `python:3.12-slim` (Linux containers).
+
+The Windows-first rationale applies to `tests` and `docs`; the container job
+cannot build a Linux image on a Windows runner. Its line-ending step checks the
+checkout with `git check-attr eol` and rejects CR bytes in `docker/*.sh`, so the
+CRLF regression that broke the first fresh-clone build is still caught even
+though the runner writes LF.
 
 `docs/check_docs.py` fails the build on a missing document, a PDF under three
 pages, any page with fewer than 120 characters of extractable text (the
@@ -286,6 +296,30 @@ containers have no Sysmon, as documented. Over HTTP: `/api/health`,
 and `/` all returned **200**; `/scripts/database.py` returned **404**. The
 published port also answered from the Windows host.
 
+### Container CI job (2026-11-15)
+
+Added `container` to `.github/workflows/ci.yml` so the image and the compose
+demo are exercised on every push, not only by hand. The job runs the workflow's
+exact steps from a `git archive` of the commit on Docker 28.5.2 / Compose
+2.40.3 (WSL2 Kali), using the same `ubuntu-latest` command line:
+
+- image build and `docker compose up -d` succeeded; dashboard **healthy**;
+- before the drill, `tests/ci_container_smoke.py` exited **1** with
+  `the drill produced fewer than 4 findings`, so the gate is not vacuous;
+- after `simulate_ransomware.py` touched 23 files, the gate reported
+  **44/44 checks passed**: 3 Critical canary + 1 High mass-change finding,
+  every finding linked to a `%PDF` report in the shared volume, WAL mode,
+  uid 10001, no `tests`/`docs`/`.git`/`.venv` in `/app`, CSV with BOM and four
+  rows, JSONL, `/` 200 with vendored Chart.js, `/scripts/database.py` 404 and
+  the legacy `/findings.json` alias current, `/api/health` alive, and no
+  traceback in the container logs;
+- a simulated Windows CRLF checkout fails the `.gitattributes` guard
+  (`eol: unspecified` is rejected).
+
+The smoke script sends `stdin=DEVNULL` to every `docker compose exec`, which was
+needed once the check ran from a heredoc. GitHub Actions has never executed this
+job; the run above is its exact commands locally.
+
 Bug found by this run (fixed in the same pass): a fresh Windows checkout wrote
 `docker/entrypoint.sh` with CRLF, and the container crash-looped on
 `exec /usr/local/bin/entrypoint.sh: no such file or directory` — the earlier
@@ -326,6 +360,9 @@ repository alone.
 - Docker on Windows bind mounts may not propagate inotify; use the compose
   volume or run natively (the compose volume was verified; a bind mount was
   not).
+- The CI container job runs on `ubuntu-latest`, so it tests Linux containers
+  but not a Windows checkout. The CRLF failure mode is covered by the
+  `.gitattributes` guard, not by an actual Windows clone of the job.
 - On a brand-new volume both services run the entrypoint's `reset_lab.py`
   initialisation concurrently, because both share the same volume. It was
   harmless in testing (the marker made the second run a no-op) but it is a
