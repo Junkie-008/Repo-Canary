@@ -261,6 +261,41 @@ working tree:
 - `docs/check_docs.py` against an empty directory exits 1 with 17 problems, so
   the gate is not vacuous.
 
+### Fresh-clone and container verification (2026-11-14)
+
+Repeated the documented flow from a clone of the commit rather than from the
+working tree:
+
+- Windows clone → `python -m venv .venv`, `pip install -r requirements-dev.txt`,
+  `pytest -q` → **57 passed** (Python 3.13; 57 also on 3.12).
+- `python docs/build_docs.py --out docs/build` + `docs/check_docs.py` →
+  `documentation set OK`.
+- Docker: the cloned tree was exported to ext4 and run with
+  `docker compose up -d --build` on Docker 28.5.2 / Compose 2.40.3 (WSL2 Kali),
+  the same setup used for the earlier build.
+
+Container results: dashboard **healthy** and engine up; `/app` in the image
+holds only `scripts index.html vendor requirements.txt
+known_hashes.example.txt` (no tests, docs or `.git`); `simulate_ransomware.py`
+run inside the stack touched **23 files** → **3 Critical canary + 1 High
+mass-change** findings and **4 PDF reports**, each one written and linked from
+`findings.report_path`; SQLite in WAL mode; `attribution_method='none'` because
+containers have no Sysmon, as documented. Over HTTP: `/api/health`,
+`/api/stats`, `/api/findings` (with pagination), `/api/events-per-minute`,
+`/api/process-heatmap`, `/api/export?format=csv`, the legacy `/findings.json`
+and `/` all returned **200**; `/scripts/database.py` returned **404**. The
+published port also answered from the Windows host.
+
+Bug found by this run (fixed in the same pass): a fresh Windows checkout wrote
+`docker/entrypoint.sh` with CRLF, and the container crash-looped on
+`exec /usr/local/bin/entrypoint.sh: no such file or directory` — the earlier
+build only worked because that one file was still LF on disk. `.gitattributes`
+now pins `*.sh`, `*.py` and the YAML files to LF (Windows scripts to CRLF, and
+the PDFs/images declared binary). Verified afterwards: a fresh clone reports
+`entrypoint.sh: POSIX shell script, ASCII text` with 57 tests still passing, and
+the rebuilt stack comes up healthily — so the demo is reproducible from the
+repository alone.
+
 ## Bugs found and fixed during implementation
 
 - `ThreatIntel.check` deadlocked on its own non-reentrant lock when the cache
