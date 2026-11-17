@@ -1,8 +1,9 @@
 # Ransomware 207 — End-to-End Evidence Checklist
 
-Use this checklist to produce the evidence for the project report, the SRS and
-the viva demo. Every step lists what to run, what should happen, and which
-requirement it proves.
+Use this checklist to produce the evidence for the eight project PDFs
+(architecture, diagrams, database, testing, user manual, future scope, synopsis
+and presentation) and the viva demo. Every step lists what to run, what should
+happen, and which requirement it proves.
 
 Run everything in the isolated Windows lab VM, inside
 `C:\RansomwareLab`, with disposable test data only.
@@ -76,13 +77,13 @@ Covers: FR-1.3 (known, disposable test data).
 python -m pytest
 ```
 
-Expected: all tests pass (`55 passed` with the current suite).
+Expected: all tests pass (`67 passed` with the current suite).
 
 Capture: `evidence\03-pytest.png`.
 
 Covers: verification of the canary, debounce, rate window, cooldown, SQLite
-persistence, migration, threat intel, attribution parsing, PDF reporting,
-HTTP API and simulator guardrails.
+persistence, canary baseline and integrity scans, migration, threat intel,
+attribution parsing, PDF reporting, HTTP API and simulator guardrails.
 
 ### 4. Negative control — ordinary activity must stay silent (FR-1.4)
 
@@ -113,7 +114,8 @@ python scripts\detection_engine.py
 
 Expected header: `Watching: ...\testdata`, `Database: ...\canary.db`,
 `Attribution: sysmon`, `Threshold: 10 events / 10 s`, `Canaries:
-_canary_01.txt, _canary_02.txt, _canary_03.txt`, then `Status: WATCHING`.
+_canary_01.txt, _canary_02.txt, _canary_03.txt`, `Baseline: 3 stored;
+startup scan 0 problem(s)`, `Integrity: every 300s`, then `Status: WATCHING`.
 
 Capture: `evidence\05-engine-started.png`.
 
@@ -196,6 +198,36 @@ Capture: `evidence\10-database.png`, `evidence\11-dashboard-live.png`.
 Covers: FR-3.1 (SQLite persistence), FR-3.3 (2-second refresh),
 FR-3.4 (status/last update), UC-04.
 
+### 9a. Optional — prove restart integrity continuity
+
+Stop the engine, change a canary while it is down, then restart it with the
+startup scan enabled. This proves that a change made during downtime is not
+lost, and that the scan finding is not duplicated by watchdog.
+
+```bat
+REM 1. Stop the engine with CTRL+C, then tamper with a canary while it is down
+echo tampered > C:\RansomwareLab\testdata\_canary_01.txt
+
+REM 2. Restart the engine (the startup scan runs before watchdog)
+python scripts\detection_engine.py --attribution none --no-reports --integrity-interval 5
+```
+
+Expected: `Baseline: 3 stored; startup scan 1 problem(s)` and a Critical
+`Canary file modified during the startup integrity scan` finding. Query the
+new row:
+
+```bat
+python -c "import sys; sys.path.insert(0,'scripts'); from pathlib import Path; from database import FindingsDB; db=FindingsDB(Path(r'C:\RansomwareLab\canary.db')); rows=db.list_findings(limit=50); print([(r['severity'], r['rule'], r['event_type'], r['summary']) for r in rows if r['event_type'] in ('startup_scan','integrity_scan')])"
+```
+
+Expected: exactly one row with `event_type='startup_scan'`; periodic scans do
+not add a duplicate. Stop the engine and run
+`python scripts\reset_lab.py --yes --clear-findings` afterwards.
+
+Capture: `evidence\15-restart-integrity.png`.
+
+Covers: FR-9.1 / FR-9.2 (restart continuity and duplicate suppression).
+
 ### 10. Capture the Sysmon Event ID 11 evidence
 
 In Event Viewer → Sysmon → Operational, filter **Event ID 11** and find the
@@ -254,7 +286,7 @@ Covers: the reporting/response extension of FR-3.
 - [ ] Reset the lab data: `python scripts\reset_lab.py --yes --clear-findings`
 - [ ] Restore the `Clean-Before-Ransomware-Test` snapshot.
 - [ ] Fill in the run record below.
-- [ ] Reference the evidence files in the report, the SRS and the presentation.
+- [ ] Reference the evidence files in the testing report, synopsis and presentation.
 
 ---
 
@@ -271,6 +303,7 @@ Covers: the reporting/response extension of FR-3.
 | Dashboard | Connected, rows within ~2 s, charts and heartbeat status visible |
 | Sysmon | Event ID 11 with `ProcessId` and `TargetFilename` in `testdata` |
 | Process attribution | Automatic via Sysmon; `none` (never a guess) when unavailable |
+| Restart integrity | A canary changed while stopped produces exactly one Critical `startup_scan` finding; no periodic duplicate |
 
 > The mass-change summary reports the number of events in the window at the
 > moment the alert fires; the first alert is always `10 events`.
@@ -292,6 +325,7 @@ Covers: the reporting/response extension of FR-3.
 | FR-3.3 dashboard refresh | 9 |
 | FR-3.4 connection status / last update | 6, 9 |
 | NFR 5.4 accuracy (negative control) | 4 |
+| FR-9.1 / FR-9.2 canary integrity and restart continuity | 9a |
 
 ---
 
@@ -313,6 +347,7 @@ Fill this in for the demo run that produced the screenshots.
 | Findings: Confirmed / Critical / High | |
 | PDF reports generated | |
 | Negative control result (PASS/FAIL) | |
+| Startup scan result (0 problems / 1 problem) | |
 | pytest result | |
 | Notes | |
 
@@ -328,6 +363,7 @@ Fill this in for the demo run that produced the screenshots.
 | Process column says `unattributed` | Sysmon is not installed or the channel is unreadable; run the engine with `--attribution sysmon` and check `error_log.txt` |
 | No canary alert | Engine is watching `testdata`, canary names are `_canary_01.txt` … `_canary_03.txt`, and `reset_lab.py` was run |
 | Duplicate canary rows | Check for a second engine instance writing to the same DB; dedupe keys make the same event idempotent, not repeated events |
+| Startup scan reports a missing canary | The lab was not reset, or a canary changed while the engine was stopped; run `reset_lab.py --yes` to restore the baseline |
 | No PDF report | `--no-reports` set, fpdf2 missing, or the throttle coalesced duplicates for the same rule+path |
 | Simulator refuses to run | The target folder lacks the `.repo-canary-lab` marker; run `reset_lab.py --yes` |
 | Findings path is wrong | Override with `--db-path` or `REPO_CANARY_DB`; `--findings` is deprecated and maps to `<name>.db` |

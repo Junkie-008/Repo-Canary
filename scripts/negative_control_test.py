@@ -23,6 +23,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from database import FindingsDB  # noqa: E402
+from detection_rules import CANARY_FILES  # noqa: E402
+from lab_config import CANARY_TEXT  # noqa: E402
 
 ENGINE = Path(__file__).with_name("detection_engine.py")
 
@@ -85,6 +87,12 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="repo-canary-negative-") as temp:
         folder = Path(temp) / "testdata"
         folder.mkdir()
+
+        # A real lab always has its canaries. Without them the engine's startup
+        # integrity scan correctly reports three missing files, which would be
+        # mistaken for a false positive by this script.
+        for name in sorted(CANARY_FILES):
+            (folder / name).write_bytes(CANARY_TEXT.encode("utf-8"))
 
         database = Path(temp) / "canary.db"
         log_file = Path(temp) / "error_log.txt"

@@ -124,7 +124,10 @@ def test_process_dimension_is_reused(tmp_path: Path):
     db.insert_finding(
         make_finding(
             path=r"C:\lab\two.txt",
-            occurred_at="2026-11-13T10:00:05.000000Z",
+            # Relative to now: top_processes() uses a rolling 48-hour window.
+            occurred_at=(datetime.now(timezone.utc) - timedelta(minutes=5)).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"
+            ),
             process=process,
         )
     )

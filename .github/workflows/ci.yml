@@ -47,26 +47,24 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: docs/requirements-docs.txt
+          cache-dependency-path: docs_src/requirements-docs.txt
 
       - name: Install documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r docs/requirements-docs.txt
+          python -m pip install -r docs_src/requirements-docs.txt
 
-      - name: Build every PDF, the deck and the Markdown sources
-        run: python docs/build_docs.py --out docs/build
+      - name: Build the eight PDF deliverables
+        run: python docs_src/build_docs.py --out docs/build
 
       - name: Validate the generated set
-        run: python docs/check_docs.py docs/build
+        run: python docs_src/check_docs.py docs/build
 
       - name: Upload the PDFs
         uses: actions/upload-artifact@v4
         with:
           name: project-documentation
-          path: |
-            docs/build/*.pdf
-            docs/build/*.pptx
+          path: docs/build/*.pdf
           if-no-files-found: error
 
   container:

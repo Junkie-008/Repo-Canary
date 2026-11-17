@@ -3,7 +3,7 @@
 Living record of the refactor: decisions, per-step implementation status, files
 touched, and verification results.
 
-Last updated: 2026-11-14 (Sysmon live attribution verified)
+Last updated: 2026-11-17 (documentation 3.1 refresh and end-to-end verification)
 
 ## Scope
 
@@ -98,6 +98,7 @@ Removed:
 | 7. Simulator + reset guardrails | Done | Marker guard, dry run, allowlist |
 | 8. Tests + verification | Done | 67 tests; negative control PASS; end-to-end run; live Sysmon attribution |
 | 9. Canary integrity continuity | Done | Persisted baseline, startup scan, periodic scans, duplicate suppression |
+| 10. Documentation 3.1 refresh | Done | PDFs, 18-slide deck, Markdown, DOCX, images, evidence checklist, changelog |
 
 ## Verification log
 
@@ -244,11 +245,11 @@ manual dispatch.
 
 - `tests` — Python 3.12 and 3.13, `pip install -r requirements-dev.txt`, then
   `pytest -q`. Runs on `windows-latest`.
-- `docs` — `pip install -r docs/requirements-docs.txt`, then
-  `python docs/build_docs.py --out docs/build` followed by
-  `python docs/check_docs.py docs/build`; the twelve PDFs and the deck are
-  uploaded as the `project-documentation` artifact. Runs on `windows-latest`:
-  the documents are set in the Windows faces.
+- `docs` — `pip install -r docs_src/requirements-docs.txt`, then
+  `python docs_src/build_docs.py --out docs/build` followed by
+  `python docs_src/check_docs.py docs/build`; the eight PDFs are uploaded as
+  the `project-documentation` artifact. Runs on `windows-latest`: the
+  documents are set in the Windows faces.
 - `container` — `docker compose up -d --build`, wait for the dashboard
   healthcheck, copy `simulate_ransomware.py` into the engine and run the drill,
   then `tests/ci_container_smoke.py`. Runs on `ubuntu-latest` because the image
@@ -260,21 +261,21 @@ checkout with `git check-attr eol` and rejects CR bytes in `docker/*.sh`, so the
 CRLF regression that broke the first fresh-clone build is still caught even
 though the runner writes LF.
 
-`docs/check_docs.py` fails the build on a missing document, a PDF under three
-pages, any page with fewer than 120 characters of extractable text (the
-near-blank-page bug found during the rebuild), a deck that is not 960x540 pt,
-slides that disagree with the PDF page count, or a missing Markdown source.
+`docs_src/check_docs.py` fails the build on a missing document, any PDF under
+three pages, any page with fewer than 120 characters of extractable text (the
+near-blank-page bug found during the rebuild), a missing current-project term,
+a missing diagram asset, or any unexpected file in `docs/`.
 
 Verified from a clean `git clone` in a fresh virtual environment, not from the
 working tree:
 
-- Python 3.13: `57 passed`; docs build and check → `documentation set OK`.
-- Python 3.12: `57 passed`; docs build and check → `documentation set OK`.
+- Python 3.13: `67 passed`; docs build and check → `documentation set OK`.
+- Python 3.12: `67 passed`; docs build and check → `documentation set OK`.
 - The clone's rebuild is text-identical to the committed PDFs page for page
   (bytes differ only by fpdf2's creation timestamp), so the committed
   deliverables are what CI produces.
-- `docs/check_docs.py` against an empty directory exits 1 with 17 problems, so
-  the gate is not vacuous.
+- `docs_src/check_docs.py` against an empty directory exits 1, so the gate is
+  not vacuous.
 
 ### Fresh-clone and container verification (2026-11-14)
 
@@ -283,7 +284,7 @@ working tree:
 
 - Windows clone → `python -m venv .venv`, `pip install -r requirements-dev.txt`,
   `pytest -q` → **57 passed** (Python 3.13; 57 also on 3.12).
-- `python docs/build_docs.py --out docs/build` + `docs/check_docs.py` →
+- `python docs_src/build_docs.py --out docs/build` + `docs_src/check_docs.py` →
   `documentation set OK`.
 - Docker: the cloned tree was exported to ext4 and run with
   `docker compose up -d --build` on Docker 28.5.2 / Compose 2.40.3 (WSL2 Kali),
@@ -360,6 +361,27 @@ have flagged every legacy lab. Canaries are now written as bytes, and seeding
 accepts only the exact canonical LF or legacy CRLF bytes — any other content
 still produces a `modified` finding.
 
+### Documentation refresh and end-to-end verification (2026-11-17)
+
+- `python -m pytest -q` → **67 passed**; negative control → **PASS**, 0 alerts.
+- End-to-end lab run (real engine + simulator, temp lab): **3 Critical canary +
+  1 High mass-change** findings, **4 PDF reports**, unique dedupe keys, no
+  duplicates, no tracebacks. Dashboard API/static checks → **13/13**.
+- Restart integrity drill → exactly one `startup_scan` finding; periodic scans
+  produced no duplicate.
+- Two verification bugs were fixed: the negative control now seeds the three
+  canaries before starting the engine, and the process-dimension test uses a
+  relative timestamp so it cannot age out of the rolling 48-hour window.
+- Documentation rebuilt at **version 3.1 (17 November 2026)** as the final
+  eight-PDF deliverable set in `docs/`: System Architecture, Diagrams, Database
+  Design, Testing Report, User Manual, Future Scope, Synopsis and Project
+  Presentation. All describe SQLite, Sysmon attribution, canary integrity
+  scans, restart continuity and the 67-test/eight-module suite. They are built
+  by `docs_src/build_docs.py` from `docs_src/docs_content.py` and validated by
+  `docs_src/check_docs.py`, which rejects any extra file in `docs/`.
+- `docs_src/images/architecture.png` and the six generated diagrams were
+  replaced with the current SQLite/API design and deployment topology.
+
 ## Bugs found and fixed during implementation
 
 - `ThreatIntel.check` deadlocked on its own non-reentrant lock when the cache
@@ -370,6 +392,13 @@ still produces a `modified` finding.
   `serve_forever()`, which would hang on Ctrl+C; removed.
 - The negative-control script still read `findings.json`, so it would have
   passed without checking anything after the migration; rewritten against SQLite.
+- After the integrity feature landed, the negative control started the engine on
+  an empty folder and the startup scan correctly reported three missing
+  canaries. The script now seeds the canaries before the run; otherwise it was
+  testing a missing-canary condition rather than ordinary activity.
+- `test_process_dimension_is_reused` pinned one finding to 2026-11-13 while
+  querying a rolling 48-hour window, so it failed once the date moved on. The
+  fixture now uses a relative timestamp.
 - Rename events incremented the event counter twice; counters now increment only
   for the source event (mass-change was already fixed).
 - Canary files were written with `write_text`, which is CRLF on Windows while
@@ -378,12 +407,13 @@ still produces a `modified` finding.
 
 ## Known limitations / follow-ups
 
-- `docs/` was regenerated on 2026-11-14 (version 3.0): all
-  twelve PDFs plus the deck and four Markdown sources now describe SQLite,
-  Sysmon attribution and the 57-test suite. They are built by
-  `docs/build_docs.py` from `docs_content.py`, so they can be
-  regenerated after any further change. The old `.docx` files (01, 07, 12) were
-  not regenerated and are now stale relative to the PDFs.
+- `docs/` was regenerated on 2026-11-17 (version 3.1) as eight PDFs: System
+  Architecture, Diagrams, Database Design, Testing Report, User Manual, Future
+  Scope, Synopsis and Project Presentation. They describe SQLite, Sysmon
+  attribution, canary integrity scans, restart continuity and the
+  67-test/eight-module suite. They are built by `docs_src/build_docs.py` from
+  `docs_src/docs_content.py`, so they can be regenerated after any further
+  change; `docs_src/check_docs.py` validates the set and the diagram assets.
 - The integrity scan covers the three canary files only; mass-change events
   that occur while the engine is stopped cannot be reconstructed from the
   filesystem. The baseline lives in the same SQLite database, so a local

@@ -1,9 +1,8 @@
-"""Render the project documentation PDFs with one consistent fpdf2 template.
+"""Render the eight project PDFs with one consistent fpdf2 template.
 
 Content lives in ``docs_content.py`` as a list of blocks, so every document
-shares the same cover, headings, tables and page furniture. Markdown is emitted
-from the same blocks, which keeps the .md files in this folder in sync with the
-PDFs.
+shares the same cover, headings, tables and page furniture. Wide diagrams are
+placed on landscape pages so their labels stay readable in print.
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ COVER_META = [
     ("Internal faculty guide", "SarathG"),
     ("Session", "2026 - 2027 (3rd Year, 5th Semester)"),
     ("Repository", "github.com/Junkie-008/repo-canary (branch main)"),
-    ("Document version", "3.0 - 14 November 2026"),
+    ("Document version", "3.1 - 17 November 2026"),
 ]
 
 
@@ -177,7 +176,7 @@ class DocPDF(FPDF):
         self.set_y(-22)
         self.set_font("Body", "", 8)
         self.set_text_color(*GREY)
-        self.cell(0, 5, "Generated from the Repo-Canary source tree, 14 November 2026", align="C")
+        self.cell(0, 5, "Generated from the Repo-Canary source tree, 17 November 2026", align="C")
         self.set_auto_page_break(auto=True, margin=20)
 
     # -- blocks -----------------------------------------------------------
@@ -211,6 +210,10 @@ class DocPDF(FPDF):
         self.multi_cell(0, 6, text, new_x="LMARGIN", new_y="NEXT")
 
     def para(self, text: str) -> None:
+        # Do not start a paragraph with only a line or two left above the footer.
+        if self.get_y() > self.h - 40:
+            self.add_page()
+
         self.set_font("Body", "", 10)
         self.set_text_color(*TEXT)
         self.multi_cell(0, 5.6, text, new_x="LMARGIN", new_y="NEXT")
@@ -222,6 +225,9 @@ class DocPDF(FPDF):
         width = self.w - self.l_margin - self.r_margin
 
         for index, item in enumerate(items, start=1):
+            if self.get_y() > self.h - 26:
+                self.add_page()
+
             marker = f"{index}." if numbered else "-"
             self.set_x(self.l_margin + 3)
             self.set_font("Body", "B", 10)
@@ -254,6 +260,77 @@ class DocPDF(FPDF):
 
         self.set_y(top + height + 3)
 
+    def figure(self, path: str, caption: str = "", width_mm: float | None = None) -> None:
+        """Embed a diagram, scaled to the text width, with a caption."""
+
+        from PIL import Image
+
+        image_path = Path(path)
+
+        if not image_path.is_file():
+            raise FileNotFoundError(f"diagram not found: {image_path}")
+
+        usable = self.w - self.l_margin - self.r_margin
+        width = min(float(width_mm or usable), usable)
+
+        with Image.open(image_path) as image:
+            height = width * (image.height / image.width)
+
+        if self.get_y() + height > self.h - self.b_margin - 8:
+            self.add_page()
+
+        x = self.l_margin + (usable - width) / 2
+        top = self.get_y()
+        self.image(str(image_path), x=x, y=top, w=width)
+        self.set_y(top + height + 3)
+
+        if caption:
+            self.set_font("Body", "", 8.5)
+            self.set_text_color(*GREY)
+            self.multi_cell(0, 4.6, caption, new_x="LMARGIN", new_y="NEXT")
+
+        self.ln(2)
+
+    def figure_page(self, path: str, caption: str = "") -> None:
+        """Place one wide diagram on its own landscape page, then resume portrait."""
+
+        from PIL import Image
+
+        image_path = Path(path)
+
+        if not image_path.is_file():
+            raise FileNotFoundError(f"diagram not found: {image_path}")
+
+        default_margins = (self.l_margin, self.t_margin, self.r_margin)
+        self.set_margins(12, 12, 12)
+        self.add_page(orientation="L")
+        usable_w = self.w - self.l_margin - self.r_margin
+        # Leave room for the running header above the image and the caption below it.
+        top = self.t_margin + 14
+        usable_h = self.h - top - self.b_margin - 20
+
+        with Image.open(image_path) as image:
+            aspect = image.height / image.width
+
+        width = usable_w
+        height = width * aspect
+
+        if height > usable_h:
+            height = usable_h
+            width = height / aspect
+
+        x = self.l_margin + (usable_w - width) / 2
+        self.image(str(image_path), x=x, y=top, w=width)
+
+        if caption:
+            self.set_xy(self.l_margin, top + height + 5)
+            self.set_font("Body", "", 9)
+            self.set_text_color(*GREY)
+            self.multi_cell(usable_w, 4.8, caption, new_x="LMARGIN", new_y="NEXT")
+
+        self.set_margins(*default_margins)
+        self.add_page(orientation="P")
+
     def data_table(self, header: Sequence[str], rows: Sequence[Sequence[str]], widths: Sequence[float] | None = None) -> None:
         if widths:
             total = sum(widths)
@@ -262,11 +339,11 @@ class DocPDF(FPDF):
             relative = None
 
         headings_style = FontFace(emphasis="BOLD", color=WHITE, fill_color=NAVY)
-        body_style = FontFace(color=TEXT, fill_color=(246, 247, 249))
 
         self.set_font("Body", "", 8.5)
         self.set_draw_color(*LIGHT)
         self.set_text_color(*TEXT)
+        self.set_fill_color(*WHITE)
 
         with super().table(
             col_widths=relative,
@@ -275,6 +352,8 @@ class DocPDF(FPDF):
             line_height=4.6,
             padding=1.6,
             borders_layout="HORIZONTAL_LINES",
+            cell_fill_mode="ROWS",
+            cell_fill_color=(246, 247, 249),
         ) as table:
             head = table.row()
             for cell in header:
@@ -343,6 +422,12 @@ def _draw_blocks(pdf: DocPDF, blocks: Sequence[tuple]) -> dict[str, int]:
         elif kind == "table":
             widths = block[3] if len(block) > 3 else None
             pdf.data_table(block[1], block[2], widths)
+        elif kind == "image":
+            caption = block[2] if len(block) > 2 else ""
+            width_mm = block[3] if len(block) > 3 else None
+            pdf.figure(block[1], caption, width_mm)
+        elif kind == "figure_wide":
+            pdf.figure_page(block[1], block[2] if len(block) > 2 else "")
         elif kind == "pagebreak":
             pdf.add_page()
         else:  # pragma: no cover - guards a typo in the content module
@@ -400,10 +485,116 @@ def to_markdown(doc: Document) -> str:
             for row in rows:
                 lines.append("| " + " | ".join(str(cell) for cell in row) + " |")
             lines.append("")
+        elif kind in {"image", "figure_wide"}:
+            caption = block[2] if len(block) > 2 else ""
+            lines += [f"![{caption}]({block[1]})", ""]
         elif kind == "pagebreak":
             lines += ["---", ""]
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+def to_docx(doc: Document, output: Path) -> Path:
+    """Render the same block model to an editable Word document."""
+
+    from docx import Document as WordDocument
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import Inches, Pt, RGBColor
+
+    word = WordDocument()
+    word.core_properties.title = doc.title
+    word.core_properties.author = "Abhishek - RANSOMWARE 207"
+    word.core_properties.subject = doc.subtitle
+    word.core_properties.comments = "Generated from docs_content.py"
+
+    for section in word.sections:
+        section.top_margin = Inches(0.8)
+        section.bottom_margin = Inches(0.8)
+        section.left_margin = Inches(0.9)
+        section.right_margin = Inches(0.9)
+
+    normal = word.styles["Normal"]
+    normal.font.name = "Segoe UI"
+    normal.font.size = Pt(10)
+    normal.element.rPr.rFonts.set(qn("w:eastAsia"), "Segoe UI")
+
+    for level, size in ((1, 15), (2, 12), (3, 10.5)):
+        style = word.styles[f"Heading {level}"]
+        style.font.name = "Segoe UI"
+        style.font.size = Pt(size)
+        style.font.color.rgb = RGBColor(0x1F, 0x2A, 0x44)
+        style.element.rPr.rFonts.set(qn("w:eastAsia"), "Segoe UI")
+
+    title = word.add_heading(doc.title, level=0)
+    title.alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+    subtitle = word.add_paragraph()
+    run = subtitle.add_run(doc.subtitle)
+    run.italic = True
+    run.font.color.rgb = RGBColor(0x6E, 0x74, 0x80)
+
+    meta = word.add_paragraph()
+    meta.add_run("RANSOMWARE 207 | Group G3 | Document version 3.1 - 17 November 2026").bold = True
+    meta.add_run("\nABES Engineering College, Ghaziabad | Dr. A.P.J. Abdul Kalam Technical University, Lucknow")
+
+    def add_code(text: str) -> None:
+        paragraph = word.add_paragraph()
+        paragraph.paragraph_format.space_after = Pt(4)
+        paragraph.paragraph_format.left_indent = Inches(0.15)
+        shading = OxmlElement("w:shd")
+        shading.set(qn("w:fill"), "F2F4F7")
+        paragraph._p.get_or_add_pPr().append(shading)
+        lines = text.strip("\n").splitlines() or [""]
+
+        for index, line in enumerate(lines):
+            run = paragraph.add_run(line)
+            run.font.name = "Consolas"
+            run.font.size = Pt(8.5)
+            run._element.rPr.rFonts.set(qn("w:eastAsia"), "Consolas")
+            if index < len(lines) - 1:
+                run.add_break()
+
+    for block in doc.blocks:
+        kind = block[0]
+
+        if kind in {"h1", "h2", "h3"}:
+            word.add_heading(block[1], level=int(kind[1]))
+        elif kind == "p":
+            word.add_paragraph(block[1])
+        elif kind == "bullets":
+            for item in block[1]:
+                word.add_paragraph(item, style="List Bullet")
+        elif kind == "num":
+            for item in block[1]:
+                word.add_paragraph(item, style="List Number")
+        elif kind == "code":
+            add_code(block[1])
+        elif kind == "table":
+            header, rows = block[1], block[2]
+            table = word.add_table(rows=1, cols=len(header))
+            table.style = "Light Grid Accent 1"
+            table.autofit = True
+
+            for index, label in enumerate(header):
+                cell = table.rows[0].cells[index]
+                cell.text = str(label)
+                for run in cell.paragraphs[0].runs:
+                    run.bold = True
+
+            for row in rows:
+                cells = table.add_row().cells
+                for index, value in enumerate(row):
+                    cells[index].text = str(value)
+
+            word.add_paragraph()
+        elif kind == "pagebreak":
+            word.add_page_break()
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    word.save(str(output))
+    return output
 
 
 def render_deck_slides(doc: Document, output_dir: Path) -> Path:
